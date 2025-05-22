@@ -43,14 +43,6 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
   useEffect(() => {
     if (!growthStory?.performance_trends) return;
 
-    // フェーズの境界を取得
-    const phaseMarkers = growthStory.career_phases?.map(phase => {
-      return {
-        date: phase.start_date,
-        label: phase.phase_name
-      };
-    }) || [];
-
     // データの準備
     const labels = growthStory.performance_trends.map(point => {
       const date = new Date(point.date);
@@ -63,30 +55,6 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
     const movingAverage = metricData.map((value, index, array) => {
       if (index < 1 || index >= array.length - 1) return value;
       return (array[index - 1] + value + array[index + 1]) / 3;
-    });
-
-    // フェーズ境界の垂直線を追加するためのアノテーション設定
-    const annotations: any = {};
-    phaseMarkers.forEach((marker, index) => {
-      const markerIndex = labels.findIndex(label => {
-        const date = new Date(marker.date);
-        return label === `${date.getFullYear()}/${date.getMonth() + 1}`;
-      });
-
-      if (markerIndex !== -1) {
-        annotations[`phase${index}`] = {
-          type: 'line',
-          scaleID: 'x',
-          value: markerIndex,
-          borderColor: 'rgba(0, 0, 0, 0.5)',
-          borderWidth: 2,
-          label: {
-            content: marker.label,
-            enabled: true,
-            position: 'top'
-          }
-        };
-      }
     });
 
     // チャートデータの設定
@@ -121,7 +89,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'top',
+          position: 'top' as const,
         },
         title: {
           display: true,
@@ -131,11 +99,8 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
           }
         },
         tooltip: {
-          mode: 'index',
+          mode: 'index' as const,
           intersect: false,
-        },
-        annotation: {
-          annotations
         }
       },
       scales: {
@@ -154,8 +119,8 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         }
       },
       interaction: {
-        mode: 'nearest',
-        axis: 'x',
+        mode: 'nearest' as const,
+        axis: 'x' as const,
         intersect: false
       }
     });
