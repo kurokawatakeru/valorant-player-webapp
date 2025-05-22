@@ -90,14 +90,17 @@ const formatStatKey = (key: string): string => {
 };
 
 // 統計値のフォーマット
-const formatStatValue = (key: string, value: number): string => {
+const formatStatValue = (key: string, value: any): string => {
+  // valueを数値として扱う
+  const numValue = typeof value === 'number' ? value : Number(value);
+  
   if (key === 'win_rate') {
-    return `${(value * 100).toFixed(1)}%`;
+    return `${(numValue * 100).toFixed(1)}%`;
   }
   if (key === 'average_kd') {
-    return value.toFixed(2);
+    return numValue.toFixed(2);
   }
-  return value.toString();
+  return numValue.toString();
 };
 
 export default CareerTimeline;
