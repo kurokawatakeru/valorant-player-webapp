@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getPlayerDetail, generatePlayerGrowthStory, PlayerGrowthStory } from '../api/apiService';
+import { generatePlayerGrowthStory, PlayerGrowthStory } from '../api/apiService';
 import PerformanceChart from '../components/PerformanceChart';
 import AgentStatsChart from '../components/AgentStatsChart';
 import MapStatsChart from '../components/MapStatsChart';
