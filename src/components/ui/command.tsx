@@ -4,7 +4,9 @@ import { Command as CommandPrimitive } from "cmdk"
 import { Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+// 修正点: インポート名を AlertDialog および AlertDialogContent に変更します。
+// import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { AlertDialog as Dialog, AlertDialogContent as DialogContent } from "@/components/ui/dialog" // 修正後
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
