@@ -5,7 +5,7 @@ import useEmblaCarousel, {
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button, ButtonProps } from "@/components/ui/button" // ButtonPropsをインポート
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -194,15 +194,15 @@ CarouselItem.displayName = "CarouselItem"
 
 const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<typeof Button>
->(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+  ButtonProps // ButtonPropsを使用
+>(({ className, variant = "outline", size = "icon", ...props }, ref) => { // sizeのデフォルト値を "icon" に
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
 
   return (
-    <Button
+    <Button // Buttonコンポーネントを使用
       ref={ref}
       variant={variant}
-      size={size}
+      size={size} // 修正: ButtonPropsで許容される型に
       className={cn(
         "absolute  h-8 w-8 rounded-full",
         orientation === "horizontal"
@@ -223,15 +223,15 @@ CarouselPrevious.displayName = "CarouselPrevious"
 
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<typeof Button>
->(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+  ButtonProps // ButtonPropsを使用
+>(({ className, variant = "outline", size = "icon", ...props }, ref) => { // sizeのデフォルト値を "icon" に
   const { orientation, scrollNext, canScrollNext } = useCarousel()
 
   return (
-    <Button
+    <Button // Buttonコンポーネントを使用
       ref={ref}
       variant={variant}
-      size={size}
+      size={size} // 修正: ButtonPropsで許容される型に
       className={cn(
         "absolute h-8 w-8 rounded-full",
         orientation === "horizontal"
