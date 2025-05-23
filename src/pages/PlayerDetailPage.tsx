@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  Share2, 
-  Heart, 
-  Star,
+import {
+  ArrowLeft,
+  ExternalLink,
+  Share2,
+  Heart,
+  // Star, // TS6133: 'Star' is declared but its value is never read.
   Trophy,
   Users,
   TrendingUp,
   BarChart3,
-  Target,
+  // Target, // TS6133: 'Target' is declared but its value is never read.
   Award,
   Calendar,
   Flag,
@@ -41,7 +41,7 @@ const PlayerDetailSkeleton: React.FC = () => (
           </div>
         </div>
       </div>
-      
+
       {/* Content Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {Array.from({ length: 4 }).map((_, index) => (
@@ -125,18 +125,17 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
       <div className="relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
-        {/* 修正点: インラインSVG URLをTailwindクラス名に置き換え */}
         <div className="absolute inset-0 bg-detail-pattern"></div>
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-6 md:space-y-0 md:space-x-8">
             {/* Avatar */}
             <div className="relative">
               <div className="w-32 h-32 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full overflow-hidden border-4 border-white shadow-xl">
                 {playerGrowthStory.info.image_url && !imageError ? (
-                  <img 
-                    src={playerGrowthStory.info.image_url} 
-                    alt={playerGrowthStory.info.name} 
+                  <img
+                    src={playerGrowthStory.info.image_url}
+                    alt={playerGrowthStory.info.name}
                     className="w-full h-full object-cover"
                     onError={() => setImageError(true)}
                   />
@@ -146,13 +145,13 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
                   </div>
                 )}
               </div>
-              
+
               {/* Online Status */}
               <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
             </div>
-            
+
             {/* Player Info */}
             <div className="flex-1">
               <div className="mb-4">
@@ -178,11 +177,11 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Social Links */}
               <div className="flex items-center space-x-4 mb-6">
                 {playerGrowthStory.info.social_links.twitter && (
-                  <a 
+                  <a
                     href={`https://twitter.com/${playerGrowthStory.info.social_links.twitter}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -193,7 +192,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
                   </a>
                 )}
                 {playerGrowthStory.info.social_links.twitch && (
-                  <a 
+                  <a
                     href={`https://twitch.tv/${playerGrowthStory.info.social_links.twitch}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -204,7 +203,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
                   </a>
                 )}
                 {playerGrowthStory.info.url && (
-                  <a 
+                  <a
                     href={playerGrowthStory.info.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -215,9 +214,8 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
                   </a>
                 )}
               </div>
-              
+
               {/* Action Buttons */}
-              {/* 修正点: ClassName を className に修正 */}
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setIsFavorited(!isFavorited)}
@@ -288,7 +286,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ playerGrowthStory }) => {
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div 
+          <div
             key={index}
             className="bg-white rounded-2xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow duration-300"
           >
@@ -315,11 +313,11 @@ const PlayerDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchPlayerData = async () => {
       if (!playerId) return;
-      
+
       try {
         setLoading(true);
         setError(null);
-        
+
         // 成長ストーリーデータを取得
         const growthStory = await generatePlayerGrowthStory(playerId);
         setPlayerGrowthStory(growthStory);
@@ -330,7 +328,7 @@ const PlayerDetailPage: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchPlayerData();
   }, [playerId]);
 
@@ -351,14 +349,14 @@ const PlayerDetailPage: React.FC = () => {
               {error || 'プレイヤーデータが見つかりませんでした。'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                to="/players" 
+              <Link
+                to="/players"
                 className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 選手一覧に戻る
               </Link>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 border border-gray-300 font-medium rounded-xl hover:bg-gray-50 transition-colors duration-200"
               >
@@ -380,27 +378,27 @@ const PlayerDetailPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <CareerTimeline growthStory={playerGrowthStory} />
             </div>
-            
+
             {/* Performance Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <PerformanceChart 
-                  growthStory={playerGrowthStory} 
-                  metric="acs" 
-                  title="ACS" 
-                  color="#4C51BF" 
+                <PerformanceChart
+                  growthStory={playerGrowthStory}
+                  metric="acs"
+                  title="ACS"
+                  color="#4C51BF"
                 />
               </div>
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <PerformanceChart 
-                  growthStory={playerGrowthStory} 
-                  metric="kd_ratio" 
-                  title="K/D比" 
-                  color="#38A169" 
+                <PerformanceChart
+                  growthStory={playerGrowthStory}
+                  metric="kd_ratio"
+                  title="K/D比"
+                  color="#38A169"
                 />
               </div>
             </div>
-            
+
             {/* Agent and Map Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -412,7 +410,7 @@ const PlayerDetailPage: React.FC = () => {
             </div>
           </div>
         );
-      
+
       case 'detailed-stats':
         return (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -427,14 +425,14 @@ const PlayerDetailPage: React.FC = () => {
               <p className="text-sm text-gray-500">
                 実装予定の機能：
                 <br />• 月別パフォーマンス分析
-                <br />• エージェント別詳細統計  
+                <br />• エージェント別詳細統計
                 <br />• 対戦相手別成績
                 <br />• ラウンド別分析
               </p>
             </div>
           </div>
         );
-      
+
       case 'match-history':
         return (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -447,7 +445,7 @@ const PlayerDetailPage: React.FC = () => {
             </div>
           </div>
         );
-      
+
       case 'compare':
         return (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -460,7 +458,7 @@ const PlayerDetailPage: React.FC = () => {
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -470,23 +468,23 @@ const PlayerDetailPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
-        <Link 
-          to="/players" 
+        <Link
+          to="/players"
           className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium mb-8 group"
         >
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
           選手一覧に戻る
         </Link>
-        
+
         {/* Player Header */}
         <PlayerHeader playerGrowthStory={playerGrowthStory} />
-        
+
         {/* Quick Stats */}
         <QuickStats playerGrowthStory={playerGrowthStory} />
-        
+
         {/* Tab Navigation */}
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-        
+
         {/* Tab Content */}
         <div className="mb-12">
           {renderTabContent()}
