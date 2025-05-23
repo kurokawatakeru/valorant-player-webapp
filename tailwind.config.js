@@ -1,3 +1,4 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
@@ -10,16 +11,55 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
-  			sidebar: {
+        // CSSカスタムプロパティを参照するように修正
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))', // inputも追加する場合 (shadcn/uiでよく使われる)
+        ring: 'hsl(var(--ring))', // ringも追加する場合 (shadcn/uiでよく使われる)
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: { // primaryもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: { // secondaryもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: { // destructiveもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: { // mutedもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: { // accentもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: { // popoverもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: { // cardもshadcn/uiの構造に合わせて定義
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+  			sidebar: { // sidebarの定義は既存のものを活かす
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',
   				primary: 'hsl(var(--sidebar-primary))',
   				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
   				accent: 'hsl(var(--sidebar-accent))',
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
+  				border: 'hsl(var(--sidebar-border-specific, var(--border)))', // Sidebar固有のボーダー、なければデフォルトの--borderを参照
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+        // 既存のVALORANTカラーパレットなどはここに含めるか、別途管理
+        'valorant-red': '#FF4655',
+        'valorant-teal': '#00D4AA',
+        'valorant-gold': '#F0B90B',
+        'valorant-blue': '#389BFF',
   		},
   		keyframes: {
   			'accordion-down': {
