@@ -2,7 +2,9 @@ import * as React from "react"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button, ButtonProps, buttonVariants } from "@/components/ui/button" // buttonVariantsとButtonPropsをインポート
+// 修正点: 未使用のため Button のインポートを削除
+// import { Button, ButtonProps, buttonVariants } from "@/components/ui/button" 
+import { ButtonProps, buttonVariants } from "@/components/ui/button" // 修正後
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
