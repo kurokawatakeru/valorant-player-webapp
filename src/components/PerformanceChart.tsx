@@ -11,7 +11,7 @@ import React from 'react';
 //   Legend,
 //   ChartOptions
 // } from 'chart.js'; // 一旦コメントアウト
-import { PlayerGrowthStory } from '../api/apiService';
+// import { PlayerGrowthStory } from '../api/apiService'; // PlayerGrowthStoryは現在このコンポーネントでは直接使わない
 
 // Chart.jsの登録 (一旦コメントアウト)
 // ChartJS.register(
@@ -25,17 +25,14 @@ import { PlayerGrowthStory } from '../api/apiService';
 // );
 
 interface PerformanceChartProps {
-  growthStory: PlayerGrowthStory; // 引数としては受け取るが、現状使わない
-  metric: 'acs' | 'kd_ratio' | 'win_rate' | 'headshot_percentage'; // 引数としては受け取るが、現状使わない
+  // growthStory: PlayerGrowthStory; // 未使用のため削除
+  // metric: 'acs' | 'kd_ratio' | 'win_rate' | 'headshot_percentage'; // 未使用のため削除
   title: string;
-  color: string; // 引数としては受け取るが、現状使わない
+  // color: string; // 未使用のため削除
 }
 
 const PerformanceChart: React.FC<PerformanceChartProps> = ({
-  // growthStory, // 未使用のためコメントアウト
-  // metric, // 未使用のためコメントアウト
   title,
-  // color // 未使用のためコメントアウト
 }) => {
   // 修正: performance_trends が存在しないため、チャート描画ロジックは一旦無効化
   // const [chartData, setChartData] = useState<any>(null);
