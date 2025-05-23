@@ -25,17 +25,17 @@ import { PlayerGrowthStory } from '../api/apiService';
 // );
 
 interface PerformanceChartProps {
-  growthStory: PlayerGrowthStory;
-  metric: 'acs' | 'kd_ratio' | 'win_rate' | 'headshot_percentage'; // この型は残すが、データがない可能性を考慮
+  growthStory: PlayerGrowthStory; // 引数としては受け取るが、現状使わない
+  metric: 'acs' | 'kd_ratio' | 'win_rate' | 'headshot_percentage'; // 引数としては受け取るが、現状使わない
   title: string;
-  color: string; // この型は残す
+  color: string; // 引数としては受け取るが、現状使わない
 }
 
 const PerformanceChart: React.FC<PerformanceChartProps> = ({
-  growthStory,
-  metric,
+  // growthStory, // 未使用のためコメントアウト
+  // metric, // 未使用のためコメントアウト
   title,
-  // color // colorはチャート描画時に使うので一旦不要に
+  // color // 未使用のためコメントアウト
 }) => {
   // 修正: performance_trends が存在しないため、チャート描画ロジックは一旦無効化
   // const [chartData, setChartData] = useState<any>(null);
