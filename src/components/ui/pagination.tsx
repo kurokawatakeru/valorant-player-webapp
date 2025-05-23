@@ -2,7 +2,7 @@ import * as React from "react"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { ButtonProps, buttonVariants } from "@/components/ui/button"
+import { Button, ButtonProps, buttonVariants } from "@/components/ui/button" // buttonVariantsとButtonPropsをインポート
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -36,19 +36,19 @@ PaginationItem.displayName = "PaginationItem"
 
 type PaginationLinkProps = {
   isActive?: boolean
-} & Pick<ButtonProps, "size"> &
+} & Pick<ButtonProps, "size"> & // ButtonPropsからsizeをPick
   React.ComponentProps<"a">
 
 const PaginationLink = ({
   className,
   isActive,
-  size = "icon",
+  size = "icon", // デフォルト値を 'icon' に
   ...props
 }: PaginationLinkProps) => (
   <a
     aria-current={isActive ? "page" : undefined}
     className={cn(
-      buttonVariants({
+      buttonVariants({ // buttonVariantsを使用
         variant: isActive ? "outline" : "ghost",
         size,
       }),
@@ -65,7 +65,7 @@ const PaginationPrevious = ({
 }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="Go to previous page"
-    size="default"
+    size="default" // 修正: ButtonPropsで許容される型に
     className={cn("gap-1 pl-2.5", className)}
     {...props}
   >
@@ -81,7 +81,7 @@ const PaginationNext = ({
 }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="Go to next page"
-    size="default"
+    size="default" // 修正: ButtonPropsで許容される型に
     className={cn("gap-1 pr-2.5", className)}
     {...props}
   >
