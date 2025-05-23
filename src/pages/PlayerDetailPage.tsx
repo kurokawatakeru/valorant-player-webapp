@@ -125,12 +125,8 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
       <div className="relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ff4655" fill-opacity="0.03"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')`,
-          }}
-        ></div>
+        {/* 修正点: インラインSVG URLをTailwindクラス名に置き換え */}
+        <div className="absolute inset-0 bg-detail-pattern"></div>
         
         <div className="relative z-10 p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-6 md:space-y-0 md:space-x-8">
@@ -221,6 +217,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
               </div>
               
               {/* Action Buttons */}
+              {/* 修正点: ClassName を className に修正 */}
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setIsFavorited(!isFavorited)}
@@ -265,7 +262,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ playerGrowthStory }) => {
     },
     {
       label: 'キャリア期間',
-      value: '5年',
+      value: '5年', // サンプルデータ
       icon: Calendar,
       color: 'text-teal-500',
       bgColor: 'bg-teal-50'
@@ -279,7 +276,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ playerGrowthStory }) => {
     },
     {
       label: '獲得タイトル',
-      value: '12',
+      value: '12', // サンプルデータ
       icon: Award,
       color: 'text-yellow-500',
       bgColor: 'bg-yellow-50'
