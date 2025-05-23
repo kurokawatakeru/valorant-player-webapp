@@ -1,83 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  Share2, 
-  Heart, 
-  // Star, // 未使用のためコメントアウト
+import {
+  ArrowLeft,
+  ExternalLink,
+  Share2,
+  Heart,
   Trophy,
   Users,
   TrendingUp,
   BarChart3,
-  // Target, // 未使用のためコメントアウト
   Award,
   Calendar,
   Flag,
   Twitter,
-  Twitch
+  Twitch,
+  Globe // 国籍表示用
 } from 'lucide-react';
-import { generatePlayerGrowthStory, PlayerGrowthStory } from '../api/apiService';
-import PerformanceChart from '../components/PerformanceChart';
-import AgentStatsChart from '../components/AgentStatsChart';
-import MapStatsChart from '../components/MapStatsChart';
-import CareerTimeline from '../components/CareerTimeline';
+// 修正: getPlayerGrowthStoryFromLiquipedia をインポート
+import { getPlayerGrowthStoryFromLiquipedia, PlayerGrowthStory } from '../api/apiService';
+// サンプルデータのチャートコンポーネントは、Liquipediaから同等のデータが取得できるか不確かなため、
+// 一旦コメントアウトするか、取得できるデータに合わせて修正が必要
+// import PerformanceChart from '../components/PerformanceChart';
+// import AgentStatsChart from '../components/AgentStatsChart';
+// import MapStatsChart from '../components/MapStatsChart';
+// import CareerTimeline from '../components/CareerTimeline';
+import { PageLoading, Skeleton } from '../components/ui/LoadingSpinner'; // ローディングコンポーネントをインポート
 
-// Loading Component
+// Loading Component (既存のものを流用または調整)
 const PlayerDetailSkeleton: React.FC = () => (
   <div className="container mx-auto px-4 py-8">
     <div className="animate-pulse">
-      {/* Header Skeleton */}
       <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
         <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-8">
-          <div className="w-32 h-32 bg-gray-200 rounded-full"></div>
+          <Skeleton className="w-32 h-32 rounded-full" />
           <div className="flex-1">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-3"></div>
-            <div className="h-4 bg-gray-200 rounded w-48 mb-4"></div>
+            <Skeleton className="h-8 w-64 mb-3" />
+            <Skeleton className="h-4 w-48 mb-4" />
             <div className="flex space-x-4">
-              <div className="h-6 bg-gray-200 rounded w-16"></div>
-              <div className="h-6 bg-gray-200 rounded w-16"></div>
+              <Skeleton className="h-10 w-24 rounded-lg" />
+              <Skeleton className="h-10 w-24 rounded-lg" />
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Content Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+        </div>
+        <div className="space-y-8">
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-56 rounded-2xl" />
+        </div>
       </div>
     </div>
   </div>
 );
 
-// Tab Navigation Component
+
+// Tab Navigation Component (内容はLiquipediaから取得できるデータに合わせて調整)
 interface TabNavigationProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  availableTabs: { id: string; label: string; icon: React.ElementType }[];
 }
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }) => {
-  const tabs = [
-    { id: 'growth-story', label: '成長ストーリー', icon: TrendingUp },
-    { id: 'detailed-stats', label: '詳細統計', icon: BarChart3 },
-    { id: 'match-history', label: '試合履歴', icon: Trophy },
-    { id: 'compare', label: '選手比較', icon: Users },
-  ];
-
+const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab, availableTabs }) => {
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2 mb-8 sticky top-20 z-40">
       <nav className="flex space-x-1 overflow-x-auto">
-        {tabs.map((tab) => {
+        {availableTabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 whitespace-nowrap text-sm sm:text-base sm:px-6 sm:py-3 ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -95,145 +93,141 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
 
 // Player Header Component
 interface PlayerHeaderProps {
-  playerGrowthStory: PlayerGrowthStory;
+  playerInfo: PlayerGrowthStory['info'];
 }
 
-const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
+const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
   const [isFavorited, setIsFavorited] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  // const [imageError, setImageError] = useState(false); // 画像エラー処理は一旦簡略化
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${playerGrowthStory.info.name}の成長ストーリー`,
-          text: `${playerGrowthStory.info.name}のVALORANT成長ストーリーをチェック！`,
-          url: window.location.href,
+          title: `${playerInfo.name}のプレイヤー情報`,
+          text: `${playerInfo.name}のLiquipedia情報をチェック！`,
+          url: playerInfo.url,
         });
       } catch (err) {
         console.log('Share failed:', err);
+        // 共有失敗時のフォールバック（例：URLコピー）
+        navigator.clipboard.writeText(playerInfo.url).then(() => {
+            alert('プレイヤーページのURLをクリップボードにコピーしました！');
+        }).catch(clipErr => {
+            console.error('Failed to copy URL: ', clipErr);
+            alert('URLのコピーに失敗しました。');
+        });
       }
     } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('URLをクリップボードにコピーしました！');
+      navigator.clipboard.writeText(playerInfo.url).then(() => {
+        alert('プレイヤーページのURLをクリップボードにコピーしました！');
+      }).catch(clipErr => {
+          console.error('Failed to copy URL: ', clipErr);
+          alert('URLのコピーに失敗しました。');
+      });
     }
   };
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl overflow-hidden mb-8">
       <div className="relative">
-        {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
-        {/* 修正点: インラインSVG URLをTailwindクラス名に置き換え */}
-        <div className="absolute inset-0 bg-detail-pattern"></div>
-        
-        <div className="relative z-10 p-8">
+        <div className="absolute inset-0 bg-detail-pattern opacity-50"></div> {/* detail-pattern を適用 */}
+        <div className="relative z-10 p-6 sm:p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-6 md:space-y-0 md:space-x-8">
-            {/* Avatar */}
-            <div className="relative">
-              <div className="w-32 h-32 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full overflow-hidden border-4 border-white shadow-xl">
-                {playerGrowthStory.info.image_url && !imageError ? (
-                  <img 
-                    src={playerGrowthStory.info.image_url} 
-                    alt={playerGrowthStory.info.name} 
+            <div className="relative flex-shrink-0">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full overflow-hidden border-4 border-white shadow-xl flex items-center justify-center">
+                {playerInfo.imageUrl ? (
+                  <img
+                    src={playerInfo.imageUrl}
+                    alt={playerInfo.name}
                     className="w-full h-full object-cover"
-                    onError={() => setImageError(true)}
+                    // onError={() => setImageError(true)} // 画像エラー処理は一旦簡略化
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Users className="w-16 h-16 text-gray-400" />
-                  </div>
+                  <Users className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400" />
                 )}
               </div>
-              
-              {/* Online Status */}
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
             </div>
-            
-            {/* Player Info */}
             <div className="flex-1">
               <div className="mb-4">
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                  {playerGrowthStory.info.name}
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-1 sm:mb-2">
+                  {playerInfo.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-4 text-gray-600">
-                  {playerGrowthStory.info.team && (
+                {playerInfo.realName && playerInfo.realName !== playerInfo.name && (
+                    <p className="text-sm text-gray-500 mb-2">({playerInfo.realName})</p>
+                )}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-gray-600 text-sm sm:text-base">
+                  {playerInfo.team && (
                     <div className="flex items-center">
-                      <Trophy className="w-4 h-4 mr-2" />
-                      <span className="font-medium">{playerGrowthStory.info.team}</span>
+                      <Trophy className="w-4 h-4 mr-1.5 text-yellow-500" />
+                      <span className="font-medium">{playerInfo.team}</span>
                     </div>
                   )}
-                  {playerGrowthStory.info.country && (
+                  {playerInfo.country && (
                     <div className="flex items-center">
-                      <Flag className="w-4 h-4 mr-2" />
-                      <span>{playerGrowthStory.info.country}</span>
+                      <Flag className="w-4 h-4 mr-1.5 text-blue-500" />
+                      <span>{playerInfo.country}</span>
                     </div>
                   )}
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <span>プロデビュー: 2020年</span>
-                  </div>
+                  {playerInfo.role && (
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-1.5 text-green-500" />
+                      <span>{playerInfo.role}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              {/* Social Links */}
-              <div className="flex items-center space-x-4 mb-6">
-                {playerGrowthStory.info.social_links.twitter && (
-                  <a 
-                    href={`https://twitter.com/${playerGrowthStory.info.social_links.twitter}`}
+              <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
+                {playerInfo.socialLinks.twitter && (
+                  <a
+                    href={`https://twitter.com/${playerInfo.socialLinks.twitter}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-xs sm:text-sm"
                   >
-                    <Twitter className="w-4 h-4" />
+                    <Twitter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Twitter</span>
                   </a>
                 )}
-                {playerGrowthStory.info.social_links.twitch && (
-                  <a 
-                    href={`https://twitch.tv/${playerGrowthStory.info.social_links.twitch}`}
+                {playerInfo.socialLinks.twitch && (
+                  <a
+                    href={`https://twitch.tv/${playerInfo.socialLinks.twitch}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 text-xs sm:text-sm"
                   >
-                    <Twitch className="w-4 h-4" />
+                    <Twitch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Twitch</span>
                   </a>
                 )}
-                {playerGrowthStory.info.url && (
-                  <a 
-                    href={playerGrowthStory.info.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    <span>VLR.gg</span>
-                  </a>
-                )}
+                <a
+                  href={playerInfo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 text-xs sm:text-sm"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>Liquipedia</span>
+                </a>
               </div>
-              
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-3"> {/* 修正: ClassName -> className */}
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <button
                   onClick={() => setIsFavorited(!isFavorited)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-1.5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm ${
                     isFavorited
                       ? 'bg-red-500 text-white hover:bg-red-600'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-                  <span>{isFavorited ? 'お気に入り済み' : 'お気に入り'}</span>
+                  <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                  <span>{isFavorited ? 'お気に入り' : 'お気に入り'}</span>
                 </button>
                 <button
                   onClick={handleShare}
-                  className="flex items-center space-x-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                  className="flex items-center space-x-1.5 px-4 py-2 sm:px-5 sm:py-2.5 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200 text-xs sm:text-sm"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span>シェア</span>
                 </button>
               </div>
@@ -245,63 +239,28 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerGrowthStory }) => {
   );
 };
 
-// Quick Stats Component
-interface QuickStatsProps {
-  playerGrowthStory: PlayerGrowthStory;
-}
-
-const QuickStats: React.FC<QuickStatsProps> = ({ playerGrowthStory }) => {
-  const stats = [
-    {
-      label: '総試合数',
-      value: playerGrowthStory.matches?.length || 0,
-      icon: Trophy,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      label: 'キャリア期間',
-      value: '5年', // サンプルデータ
-      icon: Calendar,
-      color: 'text-teal-500',
-      bgColor: 'bg-teal-50'
-    },
-    {
-      label: '使用エージェント',
-      value: playerGrowthStory.agent_stats?.length || 0,
-      icon: Users,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-50'
-    },
-    {
-      label: '獲得タイトル',
-      value: '12', // サンプルデータ
-      icon: Award,
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-50'
+// チーム履歴表示コンポーネント
+const TeamHistoryDisplay: React.FC<{ teamHistory?: PlayerGrowthStory['teamHistory'] }> = ({ teamHistory }) => {
+    if (!teamHistory || teamHistory.length === 0) {
+        return <p className="text-gray-500">チーム履歴情報はありません。</p>;
     }
-  ];
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-      {stats.map((stat, index) => {
-        const Icon = stat.icon;
-        return (
-          <div 
-            key={index}
-            className="bg-white rounded-2xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow duration-300"
-          >
-            <div className={`inline-flex items-center justify-center w-12 h-12 ${stat.bgColor} ${stat.color} rounded-xl mb-3`}>
-              <Icon className="w-6 h-6" />
+    return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">チーム履歴</h3>
+            <div className="space-y-4">
+                {teamHistory.map((team, index) => (
+                    <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="font-semibold text-gray-700">{team.teamName}</p>
+                        <p className="text-sm text-gray-500">
+                            {team.joinDate || 'N/A'} - {team.leaveDate || (team.isActive ? '現在' : 'N/A')}
+                        </p>
+                    </div>
+                ))}
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-            <div className="text-sm text-gray-600">{stat.label}</div>
-          </div>
-        );
-      })}
-    </div>
-  );
+        </div>
+    );
 };
+
 
 // Main PlayerDetailPage Component
 const PlayerDetailPage: React.FC = () => {
@@ -309,19 +268,24 @@ const PlayerDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [playerGrowthStory, setPlayerGrowthStory] = useState<PlayerGrowthStory | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('growth-story');
+  const [activeTab, setActiveTab] = useState<string>('overview'); // 初期タブ
 
   useEffect(() => {
     const fetchPlayerData = async () => {
-      if (!playerId) return;
-      
+      if (!playerId) {
+        setError('プレイヤーIDが指定されていません。');
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
-        
-        // 成長ストーリーデータを取得
-        const growthStory = await generatePlayerGrowthStory(playerId);
+        const decodedPlayerId = decodeURIComponent(playerId); // URLデコード
+        const growthStory = await getPlayerGrowthStoryFromLiquipedia(decodedPlayerId);
         setPlayerGrowthStory(growthStory);
+        if (!growthStory) {
+            setError('プレイヤーデータが見つかりませんでした。Liquipediaにページが存在しないか、情報の取得に失敗しました。');
+        }
       } catch (err) {
         console.error('Error fetching player data:', err);
         setError('プレイヤーデータの取得中にエラーが発生しました。');
@@ -329,9 +293,41 @@ const PlayerDetailPage: React.FC = () => {
         setLoading(false);
       }
     };
-    
     fetchPlayerData();
   }, [playerId]);
+
+  // Liquipediaから取得できる情報に基づいてタブを定義
+  const availableTabs = [
+    { id: 'overview', label: '概要', icon: Users },
+    // { id: 'stats', label: '統計', icon: BarChart3 }, // 詳細な統計が取得できれば有効化
+    // { id: 'matches', label: '試合履歴', icon: Trophy }, // 試合履歴が取得できれば有効化
+  ];
+
+
+  const renderTabContent = () => {
+    if (!playerGrowthStory) return <p className="text-center text-gray-500">表示できる情報がありません。</p>;
+
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="space-y-6 sm:space-y-8">
+            <TeamHistoryDisplay teamHistory={playerGrowthStory.teamHistory} />
+            {/* Liquipediaから取得できる他の概要情報をここに追加 */}
+            {/*
+            <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">エージェント統計 (仮)</h3>
+              {playerGrowthStory.agentStats && playerGrowthStory.agentStats.length > 0 ? (
+                <pre className="text-xs bg-gray-100 p-4 rounded overflow-x-auto">{JSON.stringify(playerGrowthStory.agentStats, null, 2)}</pre>
+              ) : <p className="text-gray-500">エージェント統計情報はありません。</p>}
+            </div>
+            */}
+          </div>
+        );
+      // 他のタブのコンテンツも同様に定義
+      default:
+        return <p className="text-center text-gray-500">コンテンツを選択してください。</p>;
+    }
+  };
 
   if (loading) {
     return <PlayerDetailSkeleton />;
@@ -341,25 +337,25 @@ const PlayerDetailPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-8">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 sm:p-8">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trophy className="w-8 h-8 text-red-500" />
+              <Users className="w-8 h-8 text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">データが見つかりません</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">情報取得エラー</h2>
+            <p className="text-gray-600 mb-6 text-sm sm:text-base">
               {error || 'プレイヤーデータが見つかりませんでした。'}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                to="/players" 
-                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200"
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Link
+                to="/players"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 text-sm sm:text-base"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                選手一覧に戻る
+                選手一覧へ
               </Link>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
-                className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 border border-gray-300 font-medium rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-700 border border-gray-300 font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base"
               >
                 再読み込み
               </button>
@@ -370,123 +366,21 @@ const PlayerDetailPage: React.FC = () => {
     );
   }
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'growth-story':
-        return (
-          <div className="space-y-8">
-            {/* Career Timeline */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <CareerTimeline growthStory={playerGrowthStory} />
-            </div>
-            
-            {/* Performance Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <PerformanceChart 
-                  growthStory={playerGrowthStory} 
-                  metric="acs" 
-                  title="ACS" 
-                  color="#4C51BF" 
-                />
-              </div>
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <PerformanceChart 
-                  growthStory={playerGrowthStory} 
-                  metric="kd_ratio" 
-                  title="K/D比" 
-                  color="#38A169" 
-                />
-              </div>
-            </div>
-            
-            {/* Agent and Map Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <AgentStatsChart growthStory={playerGrowthStory} />
-              </div>
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <MapStatsChart growthStory={playerGrowthStory} />
-              </div>
-            </div>
-          </div>
-        );
-      
-      case 'detailed-stats':
-        return (
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="mb-6">
-              <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">詳細統計</h3>
-              <p className="text-gray-600">
-                詳細統計機能は開発中です。今後のアップデートをお待ちください。
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-6">
-              <p className="text-sm text-gray-500">
-                実装予定の機能：
-                <br />• 月別パフォーマンス分析
-                <br />• エージェント別詳細統計  
-                <br />• 対戦相手別成績
-                <br />• ラウンド別分析
-              </p>
-            </div>
-          </div>
-        );
-      
-      case 'match-history':
-        return (
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="mb-6">
-              <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">試合履歴</h3>
-              <p className="text-gray-600">
-                試合履歴機能は開発中です。今後のアップデートをお待ちください。
-              </p>
-            </div>
-          </div>
-        );
-      
-      case 'compare':
-        return (
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="mb-6">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">選手比較</h3>
-              <p className="text-gray-600">
-                選手比較機能は開発中です。今後のアップデートをお待ちください。
-              </p>
-            </div>
-          </div>
-        );
-      
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Link 
-          to="/players" 
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium mb-8 group"
+        <Link
+          to="/players"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium mb-6 sm:mb-8 group text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
           選手一覧に戻る
         </Link>
-        
-        {/* Player Header */}
-        <PlayerHeader playerGrowthStory={playerGrowthStory} />
-        
-        {/* Quick Stats */}
+        <PlayerHeader playerInfo={playerGrowthStory.info} />
+        {/* QuickStatsはLiquipediaから取得できる情報が限られるため、一旦コメントアウトか内容変更
         <QuickStats playerGrowthStory={playerGrowthStory} />
-        
-        {/* Tab Navigation */}
-        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-        
-        {/* Tab Content */}
+        */}
+        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} availableTabs={availableTabs} />
         <div className="mb-12">
           {renderTabContent()}
         </div>
