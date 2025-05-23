@@ -48,21 +48,8 @@ const HeroSection: React.FC = () => {
     <section className="relative overflow-hidden">
       <div className={`bg-gradient-to-br ${heroSlides[currentSlide].gradient} text-white transition-all duration-1000`}>
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute inset-0">
-          <svg
-            className="w-full h-full"
-            width="60"
-            height="60"
-            viewBox="0 0 60 60"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <g fill="none" fillRule="evenodd">
-              <g fill="#ffffff" fillOpacity="0.05">
-                <circle cx="30" cy="30" r="2" />
-              </g>
-            </g>
-          </svg>
-        </div>
+        {/* 修正点: インラインSVG URLをTailwindクラス名に置き換え */}
+        <div className="absolute inset-0 bg-hero-pattern-1"></div>
 
         <div className="container mx-auto px-4 py-20 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -533,19 +520,8 @@ const CTASection: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="bg-gradient-to-br from-red-500 via-pink-500 to-purple-600 rounded-3xl overflow-hidden relative">
           <div className="absolute inset-0 bg-black/20"></div>
-          <svg
-            className="absolute inset-0"
-            width="60"
-            height="60"
-            viewBox="0 0 60 60"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <g fill="none" fillRule="evenodd">
-              <g fill="#ffffff" fillOpacity="0.1">
-                <circle cx="30" cy="30" r="2" />
-              </g>
-            </g>
-          </svg>
+          {/* 修正点: インラインSVG URLをTailwindクラス名に置き換え */}
+          <div className="absolute inset-0 bg-hero-pattern-2"></div>
 
           <div className="relative z-10 text-center py-16 px-8">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
