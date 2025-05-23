@@ -1,156 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartOptions
-} from 'chart.js';
+import React from 'react';
+// import { Line } from 'react-chartjs-2'; // 一旦コメントアウト
+// import {
+//   Chart as ChartJS,
+//   CategoryScale,
+//   LinearScale,
+//   PointElement,
+//   LineElement,
+//   Title,
+//   Tooltip,
+//   Legend,
+//   ChartOptions
+// } from 'chart.js'; // 一旦コメントアウト
 import { PlayerGrowthStory } from '../api/apiService';
 
-// Chart.jsの登録
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+// Chart.jsの登録 (一旦コメントアウト)
+// ChartJS.register(
+//   CategoryScale,
+//   LinearScale,
+//   PointElement,
+//   LineElement,
+//   Title,
+//   Tooltip,
+//   Legend
+// );
 
 interface PerformanceChartProps {
   growthStory: PlayerGrowthStory;
-  metric: 'acs' | 'kd_ratio' | 'win_rate' | 'headshot_percentage';
+  metric: 'acs' | 'kd_ratio' | 'win_rate' | 'headshot_percentage'; // この型は残すが、データがない可能性を考慮
   title: string;
-  color: string;
+  color: string; // この型は残す
 }
 
-const PerformanceChart: React.FC<PerformanceChartProps> = ({ 
-  growthStory, 
-  metric, 
+const PerformanceChart: React.FC<PerformanceChartProps> = ({
+  growthStory,
+  metric,
   title,
-  color
+  // color // colorはチャート描画時に使うので一旦不要に
 }) => {
-  const [chartData, setChartData] = useState<any>(null);
-  const [chartOptions, setChartOptions] = useState<ChartOptions<'line'>>({});
+  // 修正: performance_trends が存在しないため、チャート描画ロジックは一旦無効化
+  // const [chartData, setChartData] = useState<any>(null);
+  // const [chartOptions, setChartOptions] = useState<ChartOptions<'line'>>({});
 
-  useEffect(() => {
-    if (!growthStory?.performance_trends) return;
+  // useEffect(() => {
+    // if (!growthStory?.performance_trends) { // このプロパティは現在ない
+    //   setChartData(null);
+    //   return;
+    // }
+    // ... (既存のチャートデータ生成ロジックは一旦コメントアウト) ...
+  // }, [growthStory, metric, title, color]);
 
-    // データの準備
-    const labels = growthStory.performance_trends.map(point => {
-      const date = new Date(point.date);
-      return `${date.getFullYear()}/${date.getMonth() + 1}`;
-    });
-
-    const metricData = growthStory.performance_trends.map(point => point[metric] || 0);
-
-    // 移動平均の計算（3ポイント）
-    const movingAverage = metricData.map((value, index, array) => {
-      if (index < 1 || index >= array.length - 1) return value;
-      return (array[index - 1] + value + array[index + 1]) / 3;
-    });
-
-    // チャートデータの設定
-    setChartData({
-      labels,
-      datasets: [
-        {
-          label: title,
-          data: metricData,
-          borderColor: color,
-          backgroundColor: `${color}33`,
-          pointRadius: 3,
-          tension: 0.3,
-          fill: false
-        },
-        {
-          label: `${title} (移動平均)`,
-          data: movingAverage,
-          borderColor: `${color}99`,
-          backgroundColor: 'transparent',
-          borderDash: [5, 5],
-          pointRadius: 0,
-          tension: 0.4,
-          fill: false
-        }
-      ]
-    });
-
-    // チャートオプションの設定
-    setChartOptions({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top' as const,
-        },
-        title: {
-          display: true,
-          text: `${title}の推移`,
-          font: {
-            size: 16
-          }
-        },
-        tooltip: {
-          mode: 'index' as const,
-          intersect: false,
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: metric === 'win_rate' || metric === 'headshot_percentage',
-          title: {
-            display: true,
-            text: getYAxisLabel(metric)
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: '時期'
-          }
-        }
-      },
-      interaction: {
-        mode: 'nearest' as const,
-        axis: 'x' as const,
-        intersect: false
-      }
-    });
-  }, [growthStory, metric, title, color]);
-
-  // Y軸のラベルを取得
-  const getYAxisLabel = (metric: string): string => {
-    switch (metric) {
-      case 'acs':
-        return 'ACS (Average Combat Score)';
-      case 'kd_ratio':
-        return 'K/D比';
-      case 'win_rate':
-        return '勝率';
-      case 'headshot_percentage':
-        return 'ヘッドショット率';
-      default:
-        return '';
-    }
-  };
-
-  if (!chartData) {
-    return <div className="flex items-center justify-center h-64">データ読み込み中...</div>;
-  }
-
+  // if (!growthStory?.performance_trends) { // このプロパティは現在ない
   return (
-    <div className="w-full h-64 md:h-80">
-      <Line data={chartData} options={chartOptions} />
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <h3 className="text-lg font-semibold text-gray-700 mb-2">{title}</h3>
+      <div className="flex items-center justify-center h-48 md:h-64 text-gray-500">
+        パフォーマンス推移データは現在利用できません。
+      </div>
     </div>
   );
+  // }
+
+  // return (
+  //   <div className="w-full h-64 md:h-80">
+  //     <Line data={chartData} options={chartOptions} />
+  //   </div>
+  // );
 };
 
 export default PerformanceChart;

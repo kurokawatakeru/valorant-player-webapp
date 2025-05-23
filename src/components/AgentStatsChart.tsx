@@ -7,7 +7,7 @@ import {
   Legend,
   ChartOptions
 } from 'chart.js';
-import { PlayerGrowthStory } from '../api/apiService';
+import { PlayerGrowthStory } from '../api/apiService'; // PlayerGrowthStory をインポート
 
 // Chart.jsの登録
 ChartJS.register(
@@ -17,10 +17,10 @@ ChartJS.register(
 );
 
 interface AgentStatsChartProps {
-  growthStory: PlayerGrowthStory;
+  growthStory: PlayerGrowthStory; // 型を適用
 }
 
-// VALORANTエージェントのカラーマップ
+// VALORANTエージェントのカラーマップ (既存のまま)
 const agentColors: Record<string, string> = {
   'Jett': '#9BDDFF',
   'Raze': '#D97F4A',
@@ -50,22 +50,26 @@ const agentColors: Record<string, string> = {
 };
 
 const AgentStatsChart: React.FC<AgentStatsChartProps> = ({ growthStory }) => {
-  const [chartData, setChartData] = useState<any>(null);
+  const [chartData, setChartData] = useState<any>(null); // Chart.js のデータ型に合わせる
   const [chartOptions, setChartOptions] = useState<ChartOptions<'doughnut'>>({});
 
   useEffect(() => {
-    if (!growthStory?.agent_stats || growthStory.agent_stats.length === 0) return;
+    // 修正: agent_stats -> agentStats
+    if (!growthStory?.agentStats || growthStory.agentStats.length === 0) {
+      setChartData(null); // データがない場合はnullを設定
+      return;
+    }
 
     // エージェント使用率のデータ準備
-    const labels = growthStory.agent_stats.map(agent => agent.agent_name);
-    const data = growthStory.agent_stats.map(agent => agent.usage_percentage * 100);
-    
+    const labels = growthStory.agentStats.map(agent => agent.agentName); // 修正: agent_name -> agentName
+    // usage_percentage があると仮定、なければ別の値（例: matches_played）を使用
+    const data = growthStory.agentStats.map(agent => (agent.usagePercentage || agent.matches_played || 0) * 100);
+
     // エージェントごとの色を設定
-    const backgroundColor = labels.map(agent => 
-      agentColors[agent] || `#${Math.floor(Math.random()*16777215).toString(16)}`
+    const backgroundColor = labels.map(agentName => // agent -> agentName
+      agentColors[agentName] || `#${Math.floor(Math.random()*16777215).toString(16)}`
     );
 
-    // チャートデータの設定
     setChartData({
       labels,
       datasets: [
@@ -79,13 +83,12 @@ const AgentStatsChart: React.FC<AgentStatsChartProps> = ({ growthStory }) => {
       ]
     });
 
-    // チャートオプションの設定
     setChartOptions({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'right',
+          position: 'right' as const,
           labels: {
             boxWidth: 15,
             padding: 15
@@ -93,7 +96,7 @@ const AgentStatsChart: React.FC<AgentStatsChartProps> = ({ growthStory }) => {
         },
         title: {
           display: true,
-          text: 'エージェント使用率',
+          text: 'エージェント使用統計', // タイトル変更
           font: {
             size: 16
           }
@@ -101,15 +104,18 @@ const AgentStatsChart: React.FC<AgentStatsChartProps> = ({ growthStory }) => {
         tooltip: {
           callbacks: {
             label: (context) => {
-              const agent = growthStory.agent_stats?.[context.dataIndex];
+              // 修正: agent_stats -> agentStats
+              const agent = growthStory.agentStats?.[context.dataIndex];
               if (!agent) return '';
               
+              // 表示する情報はLiquipediaから取得できる内容に合わせる
               const lines = [
-                `${agent.agent_name}: ${agent.usage_percentage * 100}%`,
-                `勝率: ${(agent.win_rate * 100).toFixed(1)}%`,
-                `ACS: ${agent.acs}`,
-                `K/D: ${agent.kd_ratio.toFixed(2)}`,
-                `試合数: ${agent.matches_played}`
+                `${agent.agentName}: ${context.parsed.toFixed(1)}%`, // 修正: agent.agent_name -> agent.agentName
+                // 以下はサンプル、実際のデータ構造に合わせて調整
+                `試合数: ${agent.matches_played || 'N/A'}`,
+                `勝率: ${agent.win_rate ? (agent.win_rate * 100).toFixed(1) + '%' : 'N/A'}`,
+                `ACS: ${agent.acs || 'N/A'}`,
+                `K/D: ${agent.kd_ratio ? agent.kd_ratio.toFixed(2) : 'N/A'}`,
               ];
               
               return lines;
@@ -122,7 +128,7 @@ const AgentStatsChart: React.FC<AgentStatsChartProps> = ({ growthStory }) => {
   }, [growthStory]);
 
   if (!chartData) {
-    return <div className="flex items-center justify-center h-64">データ読み込み中...</div>;
+    return <div className="flex items-center justify-center h-64 text-gray-500">エージェント統計データがありません。</div>;
   }
 
   return (

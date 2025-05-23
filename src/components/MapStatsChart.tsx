@@ -10,9 +10,9 @@ import {
   Legend,
   ChartOptions
 } from 'chart.js';
-import { PlayerGrowthStory } from '../api/apiService';
+import { PlayerGrowthStory } from '../api/apiService'; // PlayerGrowthStory をインポート
 
-// Chart.jsの登録
+// Chart.jsの登録 (既存のまま)
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -23,10 +23,10 @@ ChartJS.register(
 );
 
 interface MapStatsChartProps {
-  growthStory: PlayerGrowthStory;
+  growthStory: PlayerGrowthStory; // 型を適用
 }
 
-// VALORANTマップのカラーマップ
+// VALORANTマップのカラーマップ (既存のまま)
 const mapColors: Record<string, string> = {
   'Ascent': '#7BAF6F',
   'Bind': '#D8973C',
@@ -42,27 +42,26 @@ const mapColors: Record<string, string> = {
 };
 
 const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
-  const [chartData, setChartData] = useState<any>(null);
+  const [chartData, setChartData] = useState<any>(null); // Chart.js のデータ型に合わせる
   const [chartOptions, setChartOptions] = useState<ChartOptions<'bar'>>({});
 
   useEffect(() => {
-    if (!growthStory?.map_stats || growthStory.map_stats.length === 0) return;
+    // 修正: map_stats -> mapStats
+    if (!growthStory?.mapStats || growthStory.mapStats.length === 0) {
+      setChartData(null); // データがない場合はnullを設定
+      return;
+    }
 
-    // マップ名のデータ準備
-    const labels = growthStory.map_stats.map(map => map.map_name);
+    const labels = growthStory.mapStats.map(map => map.mapName); // 修正: map_name -> mapName
     
-    // 勝率データ
-    const winRateData = growthStory.map_stats.map(map => map.win_rate * 100);
+    // Liquipediaから取得できるデータに合わせて調整
+    const winRateData = growthStory.mapStats.map(map => (map.winRate || 0) * 100); // 修正: win_rate -> winRate
+    const acsData = growthStory.mapStats.map(map => (map.acs || 0) / 3); // スケール調整は残す
     
-    // ACSデータ（スケールを調整）
-    const acsData = growthStory.map_stats.map(map => map.acs / 3);
-    
-    // マップごとの色を設定
-    const backgroundColor = labels.map(map => 
-      mapColors[map] || `#${Math.floor(Math.random()*16777215).toString(16)}`
+    const backgroundColor = labels.map(mapName => // map -> mapName
+      mapColors[mapName] || `#${Math.floor(Math.random()*16777215).toString(16)}`
     );
 
-    // チャートデータの設定
     setChartData({
       labels,
       datasets: [
@@ -85,13 +84,12 @@ const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
       ]
     });
 
-    // チャートオプションの設定
     setChartOptions({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'top',
+          position: 'top' as const,
         },
         title: {
           display: true,
@@ -103,13 +101,15 @@ const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
         tooltip: {
           callbacks: {
             label: (context) => {
-              const map = growthStory.map_stats?.[context.dataIndex];
+              // 修正: map_stats -> mapStats
+              const map = growthStory.mapStats?.[context.dataIndex];
               if (!map) return '';
               
+              // Liquipediaから取得できるデータに合わせて調整
               if (context.dataset.label === '勝率 (%)') {
-                return `勝率: ${map.win_rate * 100}% (${Math.round(map.win_rate * map.matches_played)}/${map.matches_played}試合)`;
+                return `勝率: ${(map.winRate || 0) * 100}% (${Math.round((map.winRate || 0) * (map.matchesPlayed || 0))}/${map.matchesPlayed || 'N/A'}試合)`;
               } else {
-                return `ACS: ${map.acs} / K/D: ${map.kd_ratio.toFixed(2)}`;
+                return `ACS: ${map.acs || 'N/A'} / K/D: ${map.kdRatio ? map.kdRatio.toFixed(2) : 'N/A'}`; // kd_ratio -> kdRatio
               }
             }
           }
@@ -122,7 +122,7 @@ const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
             display: true,
             text: '勝率 (%)'
           },
-          position: 'left',
+          position: 'left' as const,
           max: 100
         },
         y1: {
@@ -131,7 +131,7 @@ const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
             display: true,
             text: 'ACS (スケール調整済)'
           },
-          position: 'right',
+          position: 'right' as const,
           grid: {
             drawOnChartArea: false
           }
@@ -141,7 +141,7 @@ const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
   }, [growthStory]);
 
   if (!chartData) {
-    return <div className="flex items-center justify-center h-64">データ読み込み中...</div>;
+    return <div className="flex items-center justify-center h-64 text-gray-500">マップ統計データがありません。</div>;
   }
 
   return (
