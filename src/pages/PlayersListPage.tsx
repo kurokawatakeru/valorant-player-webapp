@@ -7,11 +7,11 @@ import {
   List, 
   Users, 
   Trophy, 
-  TrendingUp, 
+  // TrendingUp, // 修正点: 未使用のためコメントアウト
   Star,
-  ArrowUpDown,
+  // ArrowUpDown, // 修正点: 未使用のためコメントアウト
   Eye,
-  ChevronDown,
+  // ChevronDown, // 修正点: 未使用のためコメントアウト
   X
 } from 'lucide-react';
 import { getJapanesePlayers, Player } from '../api/apiService';
@@ -35,7 +35,8 @@ interface EnhancedPlayerCardProps {
 }
 
 const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMode }) => {
-  const [imageError, setImageError] = useState(false);
+  // 修正点: 未使用のためコメントアウト
+  // const [imageError, setImageError] = useState(false); 
   
   if (viewMode === 'list') {
     return (
