@@ -1,106 +1,110 @@
-import React, { useState, useEffect } from 'react';
-import { PlayerGrowthStory } from '../api/apiService';
+import React from 'react';
+import { CareerPhase } from '../api/apiService'; // 更新された型をインポート
+import { Briefcase, TrendingUp, Users, BarChart, CalendarDays, ShieldCheck } from 'lucide-react'; // アイコン追加
 
 interface CareerTimelineProps {
-  growthStory: PlayerGrowthStory;
+  careerPhases: CareerPhase[];
 }
 
-const CareerTimeline: React.FC<CareerTimelineProps> = ({ growthStory }) => {
-  const [phases, setPhases] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!growthStory?.career_phases || growthStory.career_phases.length === 0) return;
-
-    setPhases(growthStory.career_phases);
-  }, [growthStory]);
-
-  if (phases.length === 0) {
-    return <div className="flex items-center justify-center h-32">データ読み込み中...</div>;
+const CareerTimeline: React.FC<CareerTimelineProps> = ({ careerPhases }) => {
+  if (!careerPhases || careerPhases.length === 0) {
+    return <div className="flex items-center justify-center h-32 text-sm text-gray-500">キャリアフェーズデータがありません。</div>;
   }
+
+  // 日付のフォーマット関数
+  const formatDateRange = (startDateStr: string, endDateStr: string): string => {
+    const formatDate = (dateStr: string) => {
+      if (!dateStr || dateStr === 'N/A' || dateStr === '不明') return '不明';
+      if (dateStr === '現在') return '現在';
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '日付不明';
+        return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+      } catch (e) {
+        return dateStr; // パースできない場合は元の文字列
+      }
+    };
+    return `${formatDate(startDateStr)} - ${formatDate(endDateStr)}`;
+  };
 
   return (
     <div className="w-full py-4">
-      <h3 className="text-xl font-bold mb-4">キャリアフェーズ</h3>
+      <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+        <Briefcase className="w-5 h-5 mr-2 text-indigo-600"/>
+        キャリアタイムライン
+      </h3>
       
-      {/* タイムラインの線 */}
-      <div className="relative">
-        <div className="absolute left-0 md:left-1/2 h-full w-0.5 bg-gray-300 transform -translate-x-1/2"></div>
-        
-        {/* フェーズアイテム */}
-        {phases.map((phase, index) => (
+      <div className="relative pl-6 border-l-2 border-indigo-200 dark:border-indigo-700">
+        {careerPhases.map((phase, index) => (
           <div 
             key={index} 
-            className={`relative flex flex-col md:flex-row items-start mb-8 ${
-              index % 2 === 0 ? 'md:flex-row-reverse' : ''
-            }`}
+            className="mb-10 ml-4" // マージン調整
           >
-            {/* 日付表示 */}
-            <div className={`w-full md:w-1/2 px-4 mb-4 md:mb-0 ${
-              index % 2 === 0 ? 'md:text-left' : 'md:text-right'
-            }`}>
-              <div className="text-sm text-gray-500">
-                {formatDate(phase.start_date)} - {formatDate(phase.end_date)}
-              </div>
-            </div>
+            {/* タイムラインドット */}
+            <div 
+              className={`absolute w-4 h-4 bg-indigo-500 rounded-full -left-[9px] border-2 border-white dark:border-gray-900 dark:bg-indigo-400`}
+            ></div>
             
-            {/* 中央のドット */}
-            <div className="absolute left-0 md:left-1/2 w-4 h-4 bg-blue-500 rounded-full transform -translate-x-1/2 mt-1.5"></div>
-            
-            {/* フェーズ内容 */}
-            <div className={`w-full md:w-1/2 px-4 ${
-              index % 2 === 0 ? 'md:text-right' : 'md:text-left'
-            }`}>
-              <h4 className="text-lg font-semibold text-blue-600">{phase.phase_name}</h4>
-              <p className="mt-1 text-gray-700">{phase.description}</p>
-              
-              {/* 主要統計 */}
-              <div className="mt-2 flex flex-wrap gap-2">
-                {Object.entries(phase.key_stats).map(([key, value], i) => (
-                  <div key={i} className="bg-gray-100 rounded-full px-3 py-1 text-sm">
-                    {formatStatKey(key)}: {formatStatValue(key, value)}
-                  </div>
-                ))}
-              </div>
+            {/* 日付とチーム名 */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
+                <time className="text-xs font-normal text-gray-500 dark:text-gray-400 mb-1 sm:mb-0">
+                    <CalendarDays className="inline w-3.5 h-3.5 mr-1 opacity-70"/>
+                    {formatDateRange(phase.start_date, phase.end_date)}
+                </time>
+                {phase.team_name && (
+                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900 px-2 py-0.5 rounded-full self-start sm:self-center">
+                        {phase.team_name}
+                    </span>
+                )}
             </div>
+
+            {/* フェーズ名 */}
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+              {phase.phase_name}
+            </h4>
+            
+            {/* 説明 */}
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 leading-relaxed">
+              {phase.description || 'この期間に関する詳細な説明はありません。'}
+            </p>
+            
+            {/* 主要統計 (存在する場合) */}
+            {phase.key_stats && Object.keys(phase.key_stats).length > 0 && (
+              <div className="mt-2 text-xs space-y-1">
+                <p className="font-medium text-gray-700 dark:text-gray-200 mb-1">主な成績:</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    {phase.key_stats.matches_played !== undefined && (
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                            <BarChart className="w-3.5 h-3.5 mr-1.5 opacity-70"/>
+                            試合数: {phase.key_stats.matches_played}
+                        </div>
+                    )}
+                    {phase.key_stats.win_rate && (
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                            <ShieldCheck className="w-3.5 h-3.5 mr-1.5 opacity-70"/>
+                            勝率: {phase.key_stats.win_rate}
+                        </div>
+                    )}
+                    {phase.key_stats.average_acs !== undefined && (
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                            <TrendingUp className="w-3.5 h-3.5 mr-1.5 opacity-70"/>
+                            平均ACS: {phase.key_stats.average_acs}
+                        </div>
+                    )}
+                    {phase.key_stats.average_kd_ratio !== undefined && (
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
+                            <Users className="w-3.5 h-3.5 mr-1.5 opacity-70"/>
+                            平均K/D: {phase.key_stats.average_kd_ratio}
+                        </div>
+                    )}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
-};
-
-// 日付のフォーマット
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-};
-
-// 統計キーのフォーマット
-const formatStatKey = (key: string): string => {
-  switch (key) {
-    case 'average_acs':
-      return 'ACS';
-    case 'average_kd':
-      return 'K/D';
-    case 'win_rate':
-      return '勝率';
-    default:
-      return key;
-  }
-};
-
-// 統計値のフォーマット
-const formatStatValue = (key: string, value: any): string => {
-  // valueを数値として扱う
-  const numValue = typeof value === 'number' ? value : Number(value);
-  
-  if (key === 'win_rate') {
-    return `${(numValue * 100).toFixed(1)}%`;
-  }
-  if (key === 'average_kd') {
-    return numValue.toFixed(2);
-  }
-  return numValue.toString();
 };
 
 export default CareerTimeline;
