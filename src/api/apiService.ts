@@ -88,6 +88,7 @@ export interface PlayerDetail {
     url: string;
     name: string;
     logo: string;
+    tag: string; // チームのタグ
     joined: string; // 現在のチームへの加入日
   };
   results: MatchResult[]; // 試合結果リスト
