@@ -10,9 +10,9 @@ import {
   Legend,
   ChartOptions
 } from 'chart.js';
-import { PlayerGrowthStory } from '../api/apiService';
+import { MapStatSummary } from '../api/apiService'; // 更新された型をインポート
+import { LoadingStates } from './ui/LoadingSpinner';
 
-// Chart.jsの登録
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -23,129 +23,131 @@ ChartJS.register(
 );
 
 interface MapStatsChartProps {
-  growthStory: PlayerGrowthStory;
+  mapStats: MapStatSummary[];
 }
 
-// VALORANTマップのカラーマップ
 const mapColors: Record<string, string> = {
-  'Ascent': '#7BAF6F',
-  'Bind': '#D8973C',
-  'Haven': '#6B81C5',
-  'Split': '#A35A8A',
-  'Icebox': '#88CFDE',
-  'Breeze': '#59A9A9',
-  'Fracture': '#D16A6A',
-  'Pearl': '#5E7B99',
-  'Lotus': '#B86DB1',
-  'Sunset': '#F7941D',
-  'その他': '#888888'
+  'Ascent': '#7BAF6F', 'Bind': '#D8973C', 'Haven': '#6B81C5', 'Split': '#A35A8A',
+  'Icebox': '#88CFDE', 'Breeze': '#59A9A9', 'Fracture': '#D16A6A', 'Pearl': '#5E7B99',
+  'Lotus': '#B86DB1', 'Sunset': '#F7941D', 'Abyss': '#4B0082', // 新マップ仮色
+  'その他': '#A9A9A9'
 };
 
-const MapStatsChart: React.FC<MapStatsChartProps> = ({ growthStory }) => {
+const MapStatsChart: React.FC<MapStatsChartProps> = ({ mapStats }) => {
   const [chartData, setChartData] = useState<any>(null);
   const [chartOptions, setChartOptions] = useState<ChartOptions<'bar'>>({});
 
   useEffect(() => {
-    if (!growthStory?.map_stats || growthStory.map_stats.length === 0) return;
+    if (!mapStats || mapStats.length === 0) {
+      setChartData(null);
+      return;
+    }
+    
+    // 試合数でソートし、上位N件などを表示することも検討 (今回は全マップ表示)
+    const sortedMapStats = [...mapStats].sort((a,b) => (b.matches_played || 0) - (a.matches_played || 0));
 
-    // マップ名のデータ準備
-    const labels = growthStory.map_stats.map(map => map.map_name);
-    
-    // 勝率データ
-    const winRateData = growthStory.map_stats.map(map => map.win_rate * 100);
-    
-    // ACSデータ（スケールを調整）
-    const acsData = growthStory.map_stats.map(map => map.acs / 3);
-    
-    // マップごとの色を設定
-    const backgroundColor = labels.map(map => 
+    const labels = sortedMapStats.map(map => map.map_name);
+    const winRateData = sortedMapStats.map(map => (map.win_rate || 0) * 100); // %表示
+    // const matchesPlayedData = sortedMapStats.map(map => map.matches_played); // 試合数も表示する場合
+
+    const backgroundColors = labels.map(map => 
       mapColors[map] || `#${Math.floor(Math.random()*16777215).toString(16)}`
     );
 
-    // チャートデータの設定
     setChartData({
       labels,
       datasets: [
         {
           label: '勝率 (%)',
           data: winRateData,
-          backgroundColor: backgroundColor.map(color => `${color}99`),
-          borderColor: backgroundColor,
+          backgroundColor: backgroundColors.map(color => `${color}B3`), // 少し透明度を上げる
+          borderColor: backgroundColors,
           borderWidth: 1,
-          yAxisID: 'y'
+          yAxisID: 'y_win_rate' // 複数のY軸を使う場合
         },
-        {
-          label: 'ACS (スケール調整済)',
-          data: acsData,
-          backgroundColor: backgroundColor.map(color => `${color}55`),
-          borderColor: backgroundColor.map(color => `${color}dd`),
+         { // 試合数も表示する場合の例
+          label: '試合数',
+          data: matchesPlayedData,
+          backgroundColor: backgroundColors.map(color => `${color}66`),
+          borderColor: backgroundColors.map(color => `${color}AA`),
           borderWidth: 1,
-          yAxisID: 'y1'
+          yAxisID: 'y_matches_played'
         }
       ]
     });
 
-    // チャートオプションの設定
     setChartOptions({
+      indexAxis: 'y' as const, // 横棒グラフに変更
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'top',
+          display: false, // データセットが1つの場合は凡例を非表示にすることも検討
+          position: 'top' as const,
+          labels: { font: {size: 10}, boxWidth: 12, padding: 10 }
         },
         title: {
           display: true,
-          text: 'マップ別パフォーマンス',
-          font: {
-            size: 16
-          }
+          text: 'マップ別 勝率',
+          font: { size: 14, weight: 'bold' },
+          padding: { top: 5, bottom: 15 }
         },
         tooltip: {
           callbacks: {
             label: (context) => {
-              const map = growthStory.map_stats?.[context.dataIndex];
-              if (!map) return '';
+              const mapStat = sortedMapStats[context.dataIndex];
+              if (!mapStat) return '';
               
               if (context.dataset.label === '勝率 (%)') {
-                return `勝率: ${map.win_rate * 100}% (${Math.round(map.win_rate * map.matches_played)}/${map.matches_played}試合)`;
-              } else {
-                return `ACS: ${map.acs} / K/D: ${map.kd_ratio.toFixed(2)}`;
+                return `勝率: ${(mapStat.win_rate * 100).toFixed(1)}% (${mapStat.wins}勝 ${mapStat.losses}敗 / 計${mapStat.matches_played}試合)`;
               }
+              // 他のデータセット用のツールチップ (例: 試合数)
+              // if (context.dataset.label === '試合数') {
+              //   return `試合数: ${mapStat.matches_played}`;
+              // }
+              return `${context.dataset.label}: ${context.formattedValue}`;
             }
           }
         }
       },
       scales: {
-        y: {
+        x: { // 横棒グラフなのでX軸が値になる
           beginAtZero: true,
+          max: 100, // 勝率は100%が最大
           title: {
             display: true,
-            text: '勝率 (%)'
+            text: '勝率 (%)',
+            font: { size: 10 }
           },
-          position: 'left',
-          max: 100
-        },
-        y1: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'ACS (スケール調整済)'
-          },
-          position: 'right',
-          grid: {
-            drawOnChartArea: false
+          ticks: {
+            font: {size: 9},
+            callback: (value) => `${value}%` // X軸の目盛りに%を付与
           }
+        },
+        y: { // 横棒グラフなのでY軸がマップ名になる
+          ticks: { font: {size: 9} }
+        }
+        // 複数のY軸を使う場合の例
+        // y_win_rate: { position: 'left', title: { display: true, text: '勝率 (%)' }, max: 100, beginAtZero: true },
+        // y_matches_played: { position: 'right', title: { display: true, text: '試合数' }, grid: { drawOnChartArea: false }, beginAtZero: true }
+      },
+       elements: {
+        bar: {
+          borderRadius: 3, // バーの角を少し丸める
         }
       }
     });
-  }, [growthStory]);
+  }, [mapStats]);
 
+  if (!mapStats || mapStats.length === 0) {
+    return <div className="flex items-center justify-center h-full text-sm text-gray-500">マップデータがありません。</div>;
+  }
   if (!chartData) {
-    return <div className="flex items-center justify-center h-64">データ読み込み中...</div>;
+    return <LoadingStates.Chart />;
   }
 
   return (
-    <div className="w-full h-64 md:h-80">
+    <div className="w-full h-72 md:h-80"> {/* 横棒グラフなので高さを確保 */}
       <Bar data={chartData} options={chartOptions} />
     </div>
   );
