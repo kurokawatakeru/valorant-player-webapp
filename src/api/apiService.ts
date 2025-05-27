@@ -52,7 +52,7 @@ export interface PastTeam {
   left: string;   
 }
 
-export interface PlayerOverallAgentStat { // ★ exportされていることを確認
+export interface PlayerOverallAgentStat {
   agent_name: string;
   play_rate?: number;
   matches_played?: number;
@@ -61,7 +61,7 @@ export interface PlayerOverallAgentStat { // ★ exportされていることを�
   kd_ratio?: number;
 }
 
-export interface PlayerOverallMapStat { // ★ exportされていることを確認
+export interface PlayerOverallMapStat {
   map_name: string;
   matches_played?: number;
   win_rate?: number;
@@ -85,7 +85,6 @@ export interface PlayerDetail {
     url: string;
     name: string;
     logo: string;
-    tag?: string; // Added 'tag' property as optional
     joined: string; 
   };
   results: MatchResult[]; 
@@ -95,8 +94,8 @@ export interface PlayerDetail {
     twitter_url: string;
     twitch: string;
   };
-  overall_agent_stats?: PlayerOverallAgentStat[]; // APIから直接取得できる場合は使用
-  overall_map_stats?: PlayerOverallMapStat[];   // APIから直接取得できる場合は使用
+  overall_agent_stats?: PlayerOverallAgentStat[];
+  overall_map_stats?: PlayerOverallMapStat[];
 }
 
 export interface Team {
@@ -105,7 +104,7 @@ export interface Team {
   name: string;
   logo: string;
   tag: string;
-  region: string;
+  region: string; // ★ Team一覧でregionを使用するため、必須に変更
 }
 
 export interface TeamDetail {
@@ -118,6 +117,7 @@ export interface TeamDetail {
     website: string;
     twitter: string;
     country: string;
+    region?: string; // ★ TeamDetail.info に region をオプショナルで追加
   };
   roster: {
     id: string;
@@ -146,7 +146,6 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-// 成長ストーリー分析用の型定義
 export interface ProcessedMatch {
   match_id: string;
   date: string; 
@@ -170,7 +169,7 @@ export interface PerformanceTrendPoint {
   hs_percentage?: number;
 }
 
-export interface AgentStatSummary { // ★ exportされていることを確認
+export interface AgentStatSummary {
   agent_name: string;
   matches_played: number;
   win_rate: number; 
@@ -182,7 +181,7 @@ export interface AgentStatSummary { // ★ exportされていることを確認
   kd_ratio_avg?: number;
 }
 
-export interface MapStatSummary { // ★ exportされていることを確認
+export interface MapStatSummary {
   map_name: string;
   matches_played: number;
   win_rate: number; 
@@ -190,7 +189,7 @@ export interface MapStatSummary { // ★ exportされていることを確認
   losses: number;
 }
 
-export interface CareerPhase { // ★ exportされていることを確認
+export interface CareerPhase {
   phase_name: string; 
   start_date: string; 
   end_date: string;   
@@ -201,7 +200,7 @@ export interface CareerPhase { // ★ exportされていることを確認
     win_rate?: string; 
     average_acs?: number;
     average_kd_ratio?: number;
-    titles_won?: number; // ★ titles_won を追加 (オプショナル)
+    titles_won?: number; 
   };
   key_matches_ids?: string[]; 
 }
@@ -451,13 +450,12 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
             const matchDate = new Date(match.date);
             const phaseStartDate = new Date(startDate);
             const phaseEndDate = endDate === '現在' || endDate === '不明' ? new Date() : new Date(endDate);
-            // Ensure dates are valid before comparison
             if (isNaN(phaseStartDate.getTime()) || isNaN(phaseEndDate.getTime())) return false;
             return matchDate >= phaseStartDate && matchDate <= phaseEndDate;
         });
 
         let average_acs, average_kd_ratio, win_rate_str;
-        let titles_won_this_phase = 0; // このフェーズでのタイトル獲得数を初期化
+        let titles_won_this_phase = 0; 
 
         if (phaseMatches.length > 0) {
             const totalAcs = phaseMatches.reduce((sum, m) => sum + (m.player_match_stats?.acs || 0), 0);
@@ -468,8 +466,6 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
 
             const wins = phaseMatches.filter(m => m.result === 'W').length;
             win_rate_str = `${((wins / phaseMatches.length) * 100).toFixed(0)}%`;
-            // ここでAPIレスポンスや別途定義されたロジックに基づき titles_won_this_phase を計算する
-            // 例: 特定のイベント名や大会レベルでフィルタリングするなど (今回はAPIに情報がないため0のまま)
         }
 
         phases.push({
