@@ -10,9 +10,9 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
-  Filler // フィルオプションのため追加
+  Filler 
 } from 'chart.js';
-import { PerformanceTrendPoint } from '../api/apiService'; // 更新された型をインポート
+import { PerformanceTrendPoint } from '../api/apiService'; 
 import { LoadingStates } from './ui/LoadingSpinner';
 
 ChartJS.register(
@@ -23,12 +23,12 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler // Fillerを登録
+  Filler 
 );
 
 interface PerformanceChartProps {
   performanceTrends: PerformanceTrendPoint[];
-  metric: keyof Pick<PerformanceTrendPoint, 'acs' | 'kd_ratio' | 'hs_percentage'>; // 型を厳密に
+  metric: keyof Pick<PerformanceTrendPoint, 'acs' | 'kd_ratio' | 'hs_percentage'>; 
   title: string;
   color: string;
 }
@@ -39,24 +39,22 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
   title,
   color
 }) => {
-  const [chartData, setChartData] = useState<any>(null); // Chart.jsの型定義が複雑なためanyを使用
+  const [chartData, setChartData] = useState<any>(null); 
   const [chartOptions, setChartOptions] = useState<ChartOptions<'line'>>({});
 
   useEffect(() => {
     if (!performanceTrends || performanceTrends.length === 0) {
-      setChartData(null); // データがない場合はチャートをクリア
+      setChartData(null); 
       return;
     }
 
     const labels = performanceTrends.map(point => {
       const date = new Date(point.date);
-      // 日付のフォーマットを調整 (例: '23/10, '23/11)
       return `${date.getFullYear().toString().slice(-2)}/${date.getMonth() + 1}`;
     });
 
     const metricData = performanceTrends.map(point => point[metric] || 0);
 
-    // 移動平均の計算（より滑らかにするために5ポイントウィンドウなど調整可能）
     const movingAverage = metricData.map((_, index, array) => {
       const windowSize = 5;
       const start = Math.max(0, index - Math.floor(windowSize / 2));
@@ -73,18 +71,18 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
           label: title,
           data: metricData,
           borderColor: color,
-          backgroundColor: `${color}33`, // 半透明のフィルカラー
+          backgroundColor: `${color}33`, 
           pointRadius: 3,
           pointBackgroundColor: color,
           pointBorderColor: '#fff',
           pointHoverRadius: 5,
-          tension: 0.4, // 少しカーブを強く
-          fill: true, // エリアフィルを有効化
+          tension: 0.4, 
+          fill: true, 
         },
         {
           label: `${title} (移動平均)`,
           data: movingAverage,
-          borderColor: `${color}99`, // 少し薄い色
+          borderColor: `${color}99`, 
           backgroundColor: 'transparent',
           borderDash: [5, 5],
           pointRadius: 0,
@@ -101,7 +99,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         legend: {
           position: 'top' as const,
           labels: {
-            font: { size: 10 }, // 凡例のフォントサイズ
+            font: { size: 10 }, 
             boxWidth: 12,
             padding: 10,
           }
@@ -110,7 +108,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
           display: true,
           text: `${title}の推移`,
           font: {
-            size: 14, // タイトルのフォントサイズ
+            size: 14, 
             weight: 'bold',
           },
           padding: { top: 5, bottom: 15 }
@@ -125,7 +123,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
                 label += ': ';
               }
               if (context.parsed.y !== null) {
-                if (metric === 'hs_percentage' && context.datasetIndex === 0) { // 元データのみパーセント表示
+                if (metric === 'hs_percentage' && context.datasetIndex === 0) { 
                     label += (context.parsed.y * 100).toFixed(1) + '%';
                 } else if (metric === 'kd_ratio') {
                     label += context.parsed.y.toFixed(2);
@@ -141,8 +139,9 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
       },
       scales: {
         y: {
-          beginAtZero: (metric === 'win_rate' || metric === 'hs_percentage'), // win_rateは現在このチャートでは扱わない
-          min: metric === 'kd_ratio' ? 0 : undefined, // K/D比は0から始める
+          // 'win_rate' との比較を削除
+          beginAtZero: metric === 'hs_percentage' ? false : (metric === 'kd_ratio' ? false : undefined),
+          min: metric === 'kd_ratio' ? 0.5 : undefined, 
           title: {
             display: true,
             text: getYAxisLabel(metric),
@@ -154,19 +153,17 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
                 if (metric === 'hs_percentage') {
                     return (Number(value) * 100).toFixed(0) + '%';
                 }
-                return value;
+                return Number(value).toFixed(metric === 'kd_ratio' ? 2 : (metric === 'acs' ? 0 : 1) );
             }
           }
         },
         x: {
           title: {
-            display: false, // X軸のタイトルは冗長なので非表示も検討
-            // text: '期間',
-            // font: { size: 10 },
+            display: false, 
           },
           ticks: {
             font: { size: 9 },
-            maxRotation: 45, // ラベルが重なる場合は回転
+            maxRotation: 45, 
             minRotation: 0,
           }
         }
@@ -178,7 +175,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
       },
       elements: {
         line: {
-          borderWidth: 2, // 線の太さ
+          borderWidth: 2, 
         }
       }
     });
@@ -201,7 +198,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
   }
 
   return (
-    <div className="w-full h-64 md:h-72"> {/* 高さを少し調整 */}
+    <div className="w-full h-64 md:h-72"> 
       <Line data={chartData} options={chartOptions} />
     </div>
   );

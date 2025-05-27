@@ -14,22 +14,21 @@ import {
   Flag,
   Twitter,
   Twitch,
-  AlertTriangle, // エラー表示用
+  AlertTriangle, 
 } from 'lucide-react';
-import { generatePlayerGrowthStory, PlayerGrowthStory, PlayerOverallAgentStat, PlayerOverallMapStat, CareerPhase, PerformanceTrendPoint, ProcessedMatch } from '../api/apiService'; // 更新された型をインポート
+// PlayerOverallMapStat, PerformanceTrendPoint, ProcessedMatch の import を削除
+// AgentStatSummary と CareerPhase は apiService から export されるようになった
+import { generatePlayerGrowthStory, PlayerGrowthStory, CareerPhase, AgentStatSummary } from '../api/apiService'; 
 import PerformanceChart from '../components/PerformanceChart';
 import AgentStatsChart from '../components/AgentStatsChart';
 import MapStatsChart from '../components/MapStatsChart';
 import CareerTimeline from '../components/CareerTimeline';
-import { LoadingStates } from '../components/ui/LoadingSpinner'; // ローディングコンポーネントをインポート
+import { LoadingStates } from '../components/ui/LoadingSpinner';
 
-// Loading Component (既存のものを流用、またはLoadingStates.Pageを使用)
 const PlayerDetailSkeleton: React.FC = () => (
-  // LoadingStates.Page を使用するか、既存のスケルトンを維持
   <LoadingStates.Page title="プレイヤーデータを読み込み中..." description="詳細情報を取得しています。少々お待ちください。" />
 );
 
-// Tab Navigation Component (変更なし)
 interface TabNavigationProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -40,11 +39,10 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
     { id: 'growth-story', label: '成長ストーリー', icon: TrendingUp },
     { id: 'detailed-stats', label: '詳細統計', icon: BarChart3 },
     { id: 'match-history', label: '試合履歴', icon: Trophy },
-    // { id: 'compare', label: '選手比較', icon: Users }, // 比較機能は将来的に
   ];
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2 mb-8 sticky top-4 z-40 md:top-20"> {/* モバイルでのsticky位置調整 */}
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2 mb-8 sticky top-4 z-40 md:top-20">
       <nav className="flex space-x-1 overflow-x-auto custom-scrollbar">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -68,9 +66,8 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
   );
 };
 
-// Player Header Component (変更なし)
 interface PlayerHeaderProps {
-  playerInfo: PlayerGrowthStory['info']; // info部分だけを型として使用
+  playerInfo: PlayerGrowthStory['info'];
 }
 
 const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
@@ -87,17 +84,14 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
         });
       } catch (err) {
         console.error('Share failed:', err);
-        // ユーザーにフィードバック（例: トースト通知）
       }
     } else {
       navigator.clipboard.writeText(window.location.href)
         .then(() => {
-          // ユーザーにフィードバック（例: トースト通知「URLをコピーしました！」）
-          alert('URLをクリップボードにコピーしました！'); // alertは避けるべきだが、一時的な代替
+          alert('URLをクリップボードにコピーしました！');
         })
         .catch(err => {
           console.error('Failed to copy URL: ', err);
-          // ユーザーにフィードバック
         });
     }
   };
@@ -106,7 +100,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl overflow-hidden mb-8">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
-        <div className="absolute inset-0 bg-detail-pattern opacity-50"></div> {/* Tailwind configの 'detail-pattern' を参照 */}
+        <div className="absolute inset-0 bg-detail-pattern opacity-50"></div>
         
         <div className="relative z-10 p-6 sm:p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-8">
@@ -125,7 +119,6 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                   </div>
                 )}
               </div>
-              {/* Online Status (ダミー、必要なら実際のステータス連携) */}
               <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full border-2 sm:border-4 border-white flex items-center justify-center shadow-md">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
               </div>
@@ -149,7 +142,6 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                       <span>{playerInfo.country}</span>
                     </div>
                   )}
-                  {/* プロデビュー年はキャリアフェーズから取得するか、別途データが必要 */}
                 </div>
               </div>
               
@@ -217,10 +209,9 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
   );
 };
 
-// Quick Stats Component (修正: APIからのデータで動的に)
 interface QuickStatsProps {
-  careerPhases: CareerPhase[];
-  agentStats: PlayerOverallAgentStat[] | AgentStatSummary[]; // AgentStatSummary を使用するように変更
+  careerPhases: CareerPhase[]; // 型を CareerPhase[] に修正
+  agentStats: AgentStatSummary[]; 
   matchCount: number;
 }
 
@@ -242,18 +233,18 @@ const QuickStats: React.FC<QuickStatsProps> = ({ careerPhases, agentStats, match
       years--;
       months += 12;
     }
-    return years > 0 ? `${years}年${months > 0 ? `${months}ヶ月` : ''}` : `${months}ヶ月`;
+    if (years < 0) return 'N/A';
+    return years > 0 ? `${years}年${months > 0 ? `${months}ヶ月` : ''}` : `${months > 0 ? `${months}ヶ月` : '1ヶ月未満'}`;
   };
 
   const uniqueAgentCount = agentStats?.length || 0;
   
-  // 獲得タイトル数はAPIから直接取得できないため、ダミーまたは別途データが必要
-  const titlesWon = careerPhases?.reduce((acc, phase) => acc + (phase.key_stats.titles_won || 0), 0) || 0; // 仮のキー
+  const titlesWon = careerPhases?.reduce((acc, phase) => acc + (phase.key_stats.titles_won || 0), 0) || 0;
 
   const stats = [
-    { label: '総試合数', value: matchCount, icon: Trophy, color: 'text-blue-500', bgColor: 'bg-blue-50' },
+    { label: '総試合数', value: matchCount > 0 ? matchCount : 'N/A', icon: Trophy, color: 'text-blue-500', bgColor: 'bg-blue-50' },
     { label: 'キャリア期間', value: totalCareerYears(), icon: Calendar, color: 'text-teal-500', bgColor: 'bg-teal-50' },
-    { label: '使用エージェント数', value: uniqueAgentCount, icon: Users, color: 'text-purple-500', bgColor: 'bg-purple-50' },
+    { label: '使用エージェント数', value: uniqueAgentCount > 0 ? uniqueAgentCount : 'N/A', icon: Users, color: 'text-purple-500', bgColor: 'bg-purple-50' },
     { label: '獲得タイトル', value: titlesWon > 0 ? titlesWon : 'N/A', icon: Award, color: 'text-yellow-500', bgColor: 'bg-yellow-50' }
   ];
 
@@ -278,7 +269,6 @@ const QuickStats: React.FC<QuickStatsProps> = ({ careerPhases, agentStats, match
   );
 };
 
-// Main PlayerDetailPage Component
 const PlayerDetailPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const [loading, setLoading] = useState<boolean>(true);
@@ -371,7 +361,7 @@ const PlayerDetailPage: React.FC = () => {
                     performanceTrends={playerGrowthStory.performance_trends} 
                     metric="acs" 
                     title="ACS (平均コンバットスコア)" 
-                    color="#EF4444" // red-500
+                    color="#EF4444" 
                   />
                 </div>
                 <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
@@ -379,7 +369,7 @@ const PlayerDetailPage: React.FC = () => {
                     performanceTrends={playerGrowthStory.performance_trends} 
                     metric="kd_ratio" 
                     title="K/D比" 
-                    color="#10B981" // emerald-500
+                    color="#10B981" 
                   />
                 </div>
               </div>
@@ -400,7 +390,7 @@ const PlayerDetailPage: React.FC = () => {
           </div>
         );
       
-      case 'detailed-stats': // 詳細統計タブ (開発中)
+      case 'detailed-stats':
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-center">
             <div className="mb-6">
@@ -423,13 +413,13 @@ const PlayerDetailPage: React.FC = () => {
           </div>
         );
       
-      case 'match-history': // 試合履歴タブ
+      case 'match-history':
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">試合履歴</h3>
             {playerGrowthStory.processed_matches && playerGrowthStory.processed_matches.length > 0 ? (
               <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-                {playerGrowthStory.processed_matches.slice().reverse().map(match => ( // 新しい順に表示
+                {playerGrowthStory.processed_matches.slice().reverse().map(match => ( 
                   <div key={match.match_id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
                       <div className="flex items-center space-x-2 mb-2 sm:mb-0">
