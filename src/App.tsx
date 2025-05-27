@@ -5,7 +5,8 @@ import HomePage from './pages/HomePage';
 import PlayersListPage from './pages/PlayersListPage';
 import PlayerDetailPage from './pages/PlayerDetailPage';
 import TeamsListPage from './pages/TeamsListPage';
-import TeamDetailPage from './pages/TeamDetailPage'; // 新しくインポート
+import TeamDetailPage from './pages/TeamDetailPage'; 
+import FeaturesPage from './pages/FeaturesPage'; // 新しくインポート
 
 // Header Component (変更なし - 前回と同じ)
 const Header: React.FC = () => {
@@ -21,8 +22,8 @@ const Header: React.FC = () => {
 
   const isActivePath = (path: string) => {
     if (path === '/') return location.pathname === '/';
-    // チーム詳細ページでもチーム一覧タブがアクティブになるように調整
     if (path === '/teams' && location.pathname.startsWith('/teams/')) return true;
+    if (path === '/players' && location.pathname.startsWith('/players/')) return true; // 選手詳細ページでも選手一覧をアクティブに
     return location.pathname.startsWith(path);
   };
 
@@ -139,6 +140,7 @@ const Footer: React.FC = () => {
                 { to: '/', label: 'ホーム' },
                 { to: '/players', label: '選手一覧' },
                 { to: '/teams', label: 'チーム一覧' },
+                { to: '/features', label: '特集記事' }, // リンクを追加
               ].map((link) => (
                 <li key={link.to}>
                   <Link 
@@ -229,8 +231,8 @@ const App: React.FC = () => {
             <Route path="/players" element={<PlayersListPage />} />
             <Route path="/players/:playerId" element={<PlayerDetailPage />} />
             <Route path="/teams" element={<TeamsListPage />} />
-            <Route path="/teams/:teamId" element={<TeamDetailPage />} /> {/* 新しいルートを追加 */}
-            {/* <Route path="/features" element={<FeaturesPage />} /> */}
+            <Route path="/teams/:teamId" element={<TeamDetailPage />} /> 
+            <Route path="/features" element={<FeaturesPage />} /> {/* 新しいルートを追加 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
