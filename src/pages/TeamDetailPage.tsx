@@ -5,17 +5,17 @@ import {
   Shield,
   Users,
   Globe,
-  CalendarDays,
+  // CalendarDays, // ★ 未使用のため削除
   Trophy,
   ExternalLink,
   AlertTriangle,
-  Link2, // Website icon
-  Twitter // Twitter icon
+  Link2, 
+  Twitter 
 } from 'lucide-react';
-import { getTeamDetail, TeamDetail, MatchResult } from '../api/apiService'; // TeamDetail と MatchResult をインポート
+import { getTeamDetail, TeamDetail, MatchResult } from '../api/apiService'; 
 import { LoadingStates } from '../components/ui/LoadingSpinner';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Cardコンポーネントをインポート
+// import { Button } from '@/components/ui/button'; // ★ 未使用のため削除
+import { Card, CardContent, CardHeader } from '@/components/ui/card'; // ★ CardTitle を削除
 
 // Team Detail Skeleton
 const TeamDetailSkeleton: React.FC = () => (
@@ -33,7 +33,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
     <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-3xl shadow-xl overflow-hidden mb-8">
       <div className="relative p-6 sm:p-8">
         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div className="absolute inset-0 bg-hero-pattern-1 opacity-10"></div> {/* 既存のパターンを流用 */}
+        <div className="absolute inset-0 bg-hero-pattern-1 opacity-10"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
           <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center p-2 shadow-lg flex-shrink-0">
@@ -54,6 +54,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
               {teamInfo.name} {teamInfo.tag && `[${teamInfo.tag}]`}
             </h1>
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-4 gap-y-2 text-gray-300 text-sm sm:text-base mb-4">
+              {/* ★ teamInfo.region は apiService.ts でオプショナルに変更済み */}
               {teamInfo.region && (
                 <div className="flex items-center">
                   <Globe className="w-4 h-4 mr-1.5" />
@@ -95,7 +96,6 @@ const RosterItem: React.FC<RosterItemProps> = ({ player }) => (
     <Card className="hover:shadow-lg transition-shadow duration-200 hover:border-valorant-red">
       <CardContent className="p-4 flex items-center space-x-3">
         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-          {/* Placeholder for player avatar, or use a generic icon */}
           <Users className="w-5 h-5 text-gray-500" />
         </div>
         <div>
@@ -110,9 +110,10 @@ const RosterItem: React.FC<RosterItemProps> = ({ player }) => (
 // Match History Item Component
 interface MatchHistoryItemProps {
   matchResult: MatchResult;
-  currentTeamName?: string; // To determine opponent
+  currentTeamName?: string; 
+  currentTeamTag?: string; // ★ currentTeamTag を追加
 }
-const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, currentTeamName }) => {
+const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, currentTeamName, currentTeamTag }) => {
   const { match, event, teams } = matchResult;
   const team1 = teams[0] || {};
   const team2 = teams[1] || {};
@@ -120,14 +121,15 @@ const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, curren
   let playerTeam = team1;
   let opponentTeam = team2;
 
-  // Determine which team is the "current" team to correctly identify opponent
-  if (currentTeamName) {
-    if (team2.name?.toLowerCase() === currentTeamName.toLowerCase() || team2.tag?.toLowerCase() === currentTeamName.toLowerCase()) {
+  if (currentTeamName || currentTeamTag) {
+    const isTeam2Current = 
+        (currentTeamName && team2.name?.toLowerCase() === currentTeamName.toLowerCase()) ||
+        (currentTeamTag && team2.tag?.toLowerCase() === currentTeamTag.toLowerCase());
+    if (isTeam2Current) {
       playerTeam = team2;
       opponentTeam = team1;
     }
   }
-
 
   const playerScore = parseInt(playerTeam.points || '0');
   const opponentScore = parseInt(opponentTeam.points || '0');
@@ -168,8 +170,6 @@ const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, curren
   );
 };
 
-
-// Main TeamDetailPage Component
 const TeamDetailPage: React.FC = () => {
   const { teamId } = useParams<{ teamId: string }>();
   const [loading, setLoading] = useState<boolean>(true);
@@ -238,7 +238,7 @@ const TeamDetailPage: React.FC = () => {
   const recentMatches = teamDetail.results?.slice(0, 10).sort((a,b) => {
     const dateA = a.match.date ? new Date(a.match.date).getTime() : 0;
     const dateB = b.match.date ? new Date(b.match.date).getTime() : 0;
-    return dateB - dateA; // 新しい順
+    return dateB - dateA; 
   }) || [];
 
   return (
@@ -255,14 +255,14 @@ const TeamDetailPage: React.FC = () => {
         <TeamHeader teamInfo={teamDetail.info} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          {/* Roster Section */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="w-5 h-5 mr-2 text-valorant-blue"/>
-                  所属選手
-                </CardTitle>
+              {/* ★ CardHeader の title prop を使用 */}
+              <CardHeader title="所属選手">
+                <div className="flex items-center"> {/* アイコンとタイトルを横並びにするためのdiv */}
+                    <Users className="w-5 h-5 mr-2 text-valorant-blue"/>
+                    {/* CardHeaderのtitle propがh3タグを生成するため、ここではテキストを表示しない */}
+                </div>
               </CardHeader>
               <CardContent>
                 {teamDetail.roster && teamDetail.roster.length > 0 ? (
@@ -278,20 +278,23 @@ const TeamDetailPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Recent Matches Section */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
+              <CardHeader title="最近の試合結果 (最大10件)">
+                <div className="flex items-center">
                     <Trophy className="w-5 h-5 mr-2 text-valorant-gold"/>
-                    最近の試合結果 (最大10件)
-                </CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
                 {recentMatches.length > 0 ? (
                   <div className="space-y-3">
                     {recentMatches.map(matchResult => (
-                      <MatchHistoryItem key={matchResult.match.id} matchResult={matchResult} currentTeamName={teamDetail.info.name} />
+                      <MatchHistoryItem 
+                        key={matchResult.match.id} 
+                        matchResult={matchResult} 
+                        currentTeamName={teamDetail.info.name}
+                        currentTeamTag={teamDetail.info.tag} // ★ currentTeamTag を渡す
+                      />
                     ))}
                   </div>
                 ) : (
@@ -301,7 +304,6 @@ const TeamDetailPage: React.FC = () => {
             </Card>
           </div>
         </div>
-        {/* TODO: Add more sections like upcoming matches, team stats if available from API */}
       </div>
     </div>
   );

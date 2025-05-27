@@ -36,7 +36,7 @@ export interface MatchResult {
   };
   teams: {
     name: string;
-    tag: string;
+    tag: string; // チームタグはここにあると仮定
     logo: string;
     points: string;
   }[];
@@ -50,6 +50,7 @@ export interface PastTeam {
   logo: string;
   joined: string; 
   left: string;   
+  tag?: string; // 過去チームにもタグがある可能性を考慮
 }
 
 export interface PlayerOverallAgentStat {
@@ -80,12 +81,13 @@ export interface PlayerDetail {
     country: string;
     flag: string;
   };
-  team: { 
+  team: { // 現在所属しているチーム
     id: string;
     url: string;
     name: string;
     logo: string;
     joined: string; 
+    tag?: string; // ★ PlayerDetail.team に tag を追加 (オプショナル)
   };
   results: MatchResult[]; 
   pastTeams: PastTeam[];  
@@ -98,26 +100,26 @@ export interface PlayerDetail {
   overall_map_stats?: PlayerOverallMapStat[];
 }
 
-export interface Team {
+export interface Team { // チーム一覧で表示する基本的なチーム情報
   id: string;
   url: string;
   name: string;
   logo: string;
   tag: string;
-  region: string; // ★ Team一覧でregionを使用するため、必須に変更
+  region: string; 
 }
 
-export interface TeamDetail {
+export interface TeamDetail { // 特定チームの詳細情報
   info: {
     id: string;
     url: string;
     name: string;
-    tag: string;
+    tag: string; // チームタグ
     logo: string;
     website: string;
     twitter: string;
     country: string;
-    region?: string; // ★ TeamDetail.info に region をオプショナルで追加
+    region?: string; // ★ TeamDetail.info に region をオプショナルで追加 (APIレスポンスに依存)
   };
   roster: {
     id: string;
@@ -125,7 +127,7 @@ export interface TeamDetail {
     name: string;
     country: string;
   }[];
-  results: MatchResult[];
+  results: MatchResult[]; // チームの試合結果
 }
 
 export interface PaginatedResponse<T> {
@@ -194,6 +196,7 @@ export interface CareerPhase {
   start_date: string; 
   end_date: string;   
   team_name?: string;
+  team_tag?: string; // フェーズごとのチームタグも追加
   description: string;
   key_stats: { 
     matches_played?: number;
@@ -210,8 +213,9 @@ export interface PlayerGrowthStory {
     player_id: string;
     name: string;
     full_name: string;
-    team: string;
+    team: string; // 現在のチーム名
     team_id: string;
+    team_tag?: string; // 現在のチームタグ
     country: string;
     image_url: string;
     url: string;
@@ -317,6 +321,7 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
         full_name: playerData.info.name,
         team: playerData.team?.name || 'N/A',
         team_id: playerData.team?.id || 'N/A',
+        team_tag: playerData.team?.tag, // ★ team.tag を参照
         country: playerData.info.country,
         image_url: playerData.info.img,
         url: playerData.info.url,
@@ -343,16 +348,27 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
         const team1 = teams[0] || {};
         const team2 = teams[1] || {};
         
-        const playerTeamName = playerData.team?.name?.toLowerCase();
-        const playerTeamTag = playerData.team?.tag?.toLowerCase();
-
+        // プレイヤーがどちらのチームにいたかを判定するロジックを改善
+        // (現在のチームだけでなく、過去のチーム情報も考慮に入れる必要があるかもしれないが、
+        //  ここではAPIが返すチーム情報とプレイヤーの現在のチーム情報を照合する)
         let playerTeamDetails = team1;
         let opponentTeamDetails = team2;
 
-        if (team2.name?.toLowerCase() === playerTeamName || team2.tag?.toLowerCase() === playerTeamTag) {
+        // プレイヤーの現在のチーム情報 (playerData.team) と試合のチーム情報を比較
+        // チーム名またはチームタグで照合
+        if (playerData.team && 
+            (team2.name?.toLowerCase() === playerData.team.name?.toLowerCase() || 
+             (playerData.team.tag && team2.tag?.toLowerCase() === playerData.team.tag?.toLowerCase())
+            )
+           ) {
             playerTeamDetails = team2;
             opponentTeamDetails = team1;
+        } else if (!playerData.team && teams.length === 2) {
+            // プレイヤーの現在のチーム情報がない場合、どちらをプレイヤーチームとするか判断が難しい
+            // ここでは仮に team1 をプレイヤーチームとするが、APIの仕様次第で調整が必要
+            // もしくは、player_stats がどちらのチームのプレイヤーのものかを示す情報がAPIにあればそれを利用
         }
+
         
         const playerScore = parseInt(playerTeamDetails.points || '0');
         const opponentScore = parseInt(opponentTeamDetails.points || '0');
@@ -430,14 +446,15 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
     })).sort((a,b) => b.matches_played - a.matches_played);
 
     const phases: CareerPhase[] = [];
-    const allTeamsHistory = [...(playerData.pastTeams || [])];
+    const allTeamsHistory: PastTeam[] = [...(playerData.pastTeams || [])];
     if (playerData.team?.name && playerData.team?.joined) { 
         allTeamsHistory.push({
             id: playerData.team.id,
             name: playerData.team.name,
             logo: playerData.team.logo,
             joined: playerData.team.joined,
-            left: 'Present' 
+            left: 'Present', // 現在所属
+            tag: playerData.team.tag 
         });
     }
     allTeamsHistory.sort((a, b) => new Date(a.joined).getTime() - new Date(b.joined).getTime());
@@ -469,10 +486,11 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
         }
 
         phases.push({
-            phase_name: `${teamHistory.name}時代`,
+            phase_name: `${teamHistory.name}${teamHistory.tag ? ` [${teamHistory.tag}]` : ''}時代`,
             start_date: startDate,
             end_date: endDate,
             team_name: teamHistory.name,
+            team_tag: teamHistory.tag,
             description: `${teamHistory.name}に在籍していた期間。`,
             key_stats: {
                 matches_played: phaseMatches.length,
@@ -487,8 +505,8 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
     
     if (growthStory.career_phases.length === 0) {
         growthStory.career_phases = [
-            { phase_name: '初期キャリア (サンプル)', start_date: '2020-01-01', end_date: '2021-12-31', team_name: 'サンプルチームA', description: 'プロとしてのキャリアを開始した時期のサンプルデータです。', key_stats: { average_acs: 210, average_kd_ratio: 1.05, win_rate: "50%", titles_won: 0 } },
-            { phase_name: '成長期 (サンプル)', start_date: '2022-01-01', end_date: '現在', team_name: 'サンプルチームB',description: 'チームの中心選手として活躍し始めた時期のサンプルデータです。', key_stats: { average_acs: 245, average_kd_ratio: 1.18, win_rate: "60%", titles_won: 1 } },
+            { phase_name: '初期キャリア (サンプル)', start_date: '2020-01-01', end_date: '2021-12-31', team_name: 'サンプルチームA', team_tag: 'SMPLA', description: 'プロとしてのキャリアを開始した時期のサンプルデータです。', key_stats: { average_acs: 210, average_kd_ratio: 1.05, win_rate: "50%", titles_won: 0 } },
+            { phase_name: '成長期 (サンプル)', start_date: '2022-01-01', end_date: '現在', team_name: 'サンプルチームB', team_tag: 'SMPLB', description: 'チームの中心選手として活躍し始めた時期のサンプルデータです。', key_stats: { average_acs: 245, average_kd_ratio: 1.18, win_rate: "60%", titles_won: 1 } },
         ];
     }
     return growthStory;
