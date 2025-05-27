@@ -62,7 +62,6 @@ const MapStatsChart: React.FC<MapStatsChartProps> = ({ mapStats }) => {
           borderColor: backgroundColors,
           borderWidth: 1,
         },
-        // ★ matchesPlayedData の参照を削除
       ]
     });
 

@@ -10,19 +10,22 @@ import {
   TrendingUp,
   BarChart3,
   Award,
-  Calendar,
+  Calendar, // CalendarDays は未使用なので削除
   Flag,
   Twitter,
   Twitch,
   AlertTriangle, 
+  Link2, 
 } from 'lucide-react';
-// ★ AgentStatSummary と CareerPhase を正しくインポート
+// ★ AgentStatSummary と CareerPhase を apiService からインポート
+// PlayerOverallMapStat, PerformanceTrendPoint, ProcessedMatch は PlayerGrowthStory 経由で型情報が得られるため直接インポート不要
 import { generatePlayerGrowthStory, PlayerGrowthStory, CareerPhase, AgentStatSummary } from '../api/apiService'; 
 import PerformanceChart from '../components/PerformanceChart';
 import AgentStatsChart from '../components/AgentStatsChart';
 import MapStatsChart from '../components/MapStatsChart';
 import CareerTimeline from '../components/CareerTimeline';
 import { LoadingStates } from '../components/ui/LoadingSpinner';
+// import { Button } from '@/components/ui/button'; // Button は直接使用していないため削除
 
 const PlayerDetailSkeleton: React.FC = () => (
   <LoadingStates.Page title="プレイヤーデータを読み込み中..." description="詳細情報を取得しています。少々お待ちください。" />
@@ -210,7 +213,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
 
 interface QuickStatsProps {
   careerPhases: CareerPhase[]; 
-  agentStats: AgentStatSummary[]; // ★ AgentStatSummary を使用
+  agentStats: AgentStatSummary[]; 
   matchCount: number;
 }
 

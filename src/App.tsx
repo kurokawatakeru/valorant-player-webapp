@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Users, Trophy, FileText, Search, Shield } from 'lucide-react'; // Shield アイコンをインポート
+import { Menu, X, Home, Users, Trophy, FileText, Search, Shield } from 'lucide-react';
 import HomePage from './pages/HomePage';
 import PlayersListPage from './pages/PlayersListPage';
 import PlayerDetailPage from './pages/PlayerDetailPage';
-import TeamsListPage from './pages/TeamsListPage'; // 新しくインポート
+import TeamsListPage from './pages/TeamsListPage';
+import TeamDetailPage from './pages/TeamDetailPage'; // 新しくインポート
 
-// Header Component
+// Header Component (変更なし - 前回と同じ)
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -14,12 +15,14 @@ const Header: React.FC = () => {
   const navigationItems = [
     { path: '/', label: 'ホーム', icon: Home },
     { path: '/players', label: '選手一覧', icon: Users },
-    { path: '/teams', label: 'チーム一覧', icon: Shield }, // アイコンを Shield に変更
-    { path: '/features', label: '特集記事', icon: FileText }, // TODO: 特集記事ページは未実装
+    { path: '/teams', label: 'チーム一覧', icon: Shield },
+    { path: '/features', label: '特集記事', icon: FileText }, 
   ];
 
   const isActivePath = (path: string) => {
     if (path === '/') return location.pathname === '/';
+    // チーム詳細ページでもチーム一覧タブがアクティブになるように調整
+    if (path === '/teams' && location.pathname.startsWith('/teams/')) return true;
     return location.pathname.startsWith(path);
   };
 
@@ -106,6 +109,7 @@ const Header: React.FC = () => {
   );
 };
 
+// Footer Component (変更なし - 前回と同じ)
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
   return (
@@ -126,10 +130,6 @@ const Footer: React.FC = () => {
               「物語」として伝えるプラットフォーム。選手の軌跡を追い、
               感動的な成長ストーリーを発見しよう。
             </p>
-            {/* <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><span className="sr-only">Twitter</span><Twitter className="w-5 h-5"/></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><span className="sr-only">Discord</span><MessageSquare className="w-5 h-5"/></a>
-            </div> */}
           </div>
 
           <div>
@@ -139,7 +139,6 @@ const Footer: React.FC = () => {
                 { to: '/', label: 'ホーム' },
                 { to: '/players', label: '選手一覧' },
                 { to: '/teams', label: 'チーム一覧' },
-                // { to: '/features', label: '特集記事' } // 未実装のためコメントアウトも検討
               ].map((link) => (
                 <li key={link.to}>
                   <Link 
@@ -179,6 +178,7 @@ const Footer: React.FC = () => {
   );
 };
 
+// NotFoundPage Component (変更なし - 前回と同じ)
 const NotFoundPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4 py-12">
@@ -215,20 +215,22 @@ const NotFoundPage: React.FC = () => {
   );
 };
 
+
+// Main App Component
 const App: React.FC = () => {
   return (
     <Router>
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <Header />
         
-        <main className="flex-grow"> {/* main要素にflex-growを追加してフッターを最下部に固定 */}
+        <main className="flex-grow">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/players" element={<PlayersListPage />} />
             <Route path="/players/:playerId" element={<PlayerDetailPage />} />
-            <Route path="/teams" element={<TeamsListPage />} /> {/* 新しいルートを追加 */}
-            {/* <Route path="/teams/:teamId" element={<TeamDetailPage />} />  将来的に実装 */}
-            {/* <Route path="/features" element={<FeaturesPage />} />  将来的に実装 */}
+            <Route path="/teams" element={<TeamsListPage />} />
+            <Route path="/teams/:teamId" element={<TeamDetailPage />} /> {/* 新しいルートを追加 */}
+            {/* <Route path="/features" element={<FeaturesPage />} /> */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
