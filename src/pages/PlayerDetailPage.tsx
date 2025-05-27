@@ -10,14 +10,13 @@ import {
   TrendingUp,
   BarChart3,
   Award,
-  Calendar, // CalendarDays から Calendar に変更 (lucide-react のアイコン名に合わせる)
+  Calendar, 
   Flag,
   Twitter,
   Twitch,
   AlertTriangle, 
   // Link2, // ★ 未使用のため削除
 } from 'lucide-react';
-// ★ AgentStatSummary と CareerPhase を apiService からインポート
 import { generatePlayerGrowthStory, PlayerGrowthStory, CareerPhase, AgentStatSummary } from '../api/apiService'; 
 import PerformanceChart from '../components/PerformanceChart';
 import AgentStatsChart from '../components/AgentStatsChart';

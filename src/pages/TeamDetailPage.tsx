@@ -54,7 +54,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
               {teamInfo.name} {teamInfo.tag && `[${teamInfo.tag}]`}
             </h1>
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-4 gap-y-2 text-gray-300 text-sm sm:text-base mb-4">
-              {/* ★ teamInfo.region は apiService.ts でオプショナルに変更済み */}
+              {/* ★ teamInfo.region の参照エラーは apiService.ts の型定義修正で対応 */}
               {teamInfo.region && (
                 <div className="flex items-center">
                   <Globe className="w-4 h-4 mr-1.5" />
@@ -111,7 +111,7 @@ const RosterItem: React.FC<RosterItemProps> = ({ player }) => (
 interface MatchHistoryItemProps {
   matchResult: MatchResult;
   currentTeamName?: string; 
-  currentTeamTag?: string; // ★ currentTeamTag を追加
+  currentTeamTag?: string; 
 }
 const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, currentTeamName, currentTeamTag }) => {
   const { match, event, teams } = matchResult;
@@ -257,11 +257,9 @@ const TeamDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div className="lg:col-span-1">
             <Card>
-              {/* ★ CardHeader の title prop を使用 */}
               <CardHeader title="所属選手">
-                <div className="flex items-center"> {/* アイコンとタイトルを横並びにするためのdiv */}
+                <div className="flex items-center"> 
                     <Users className="w-5 h-5 mr-2 text-valorant-blue"/>
-                    {/* CardHeaderのtitle propがh3タグを生成するため、ここではテキストを表示しない */}
                 </div>
               </CardHeader>
               <CardContent>
@@ -293,7 +291,7 @@ const TeamDetailPage: React.FC = () => {
                         key={matchResult.match.id} 
                         matchResult={matchResult} 
                         currentTeamName={teamDetail.info.name}
-                        currentTeamTag={teamDetail.info.tag} // ★ currentTeamTag を渡す
+                        currentTeamTag={teamDetail.info.tag} 
                       />
                     ))}
                   </div>

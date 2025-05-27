@@ -36,7 +36,7 @@ export interface MatchResult {
   };
   teams: {
     name: string;
-    tag: string; // チームタグはここにあると仮定
+    tag: string; 
     logo: string;
     points: string;
   }[];
@@ -50,7 +50,7 @@ export interface PastTeam {
   logo: string;
   joined: string; 
   left: string;   
-  tag?: string; // 過去チームにもタグがある可能性を考慮
+  tag?: string; 
 }
 
 export interface PlayerOverallAgentStat {
@@ -81,13 +81,13 @@ export interface PlayerDetail {
     country: string;
     flag: string;
   };
-  team: { // 現在所属しているチーム
+  team: { 
     id: string;
     url: string;
     name: string;
     logo: string;
     joined: string; 
-    tag?: string; // ★ PlayerDetail.team に tag を追加 (オプショナル)
+    tag?: string; // ★ PlayerDetail.team に tag をオプショナルで追加
   };
   results: MatchResult[]; 
   pastTeams: PastTeam[];  
@@ -100,7 +100,7 @@ export interface PlayerDetail {
   overall_map_stats?: PlayerOverallMapStat[];
 }
 
-export interface Team { // チーム一覧で表示する基本的なチーム情報
+export interface Team { 
   id: string;
   url: string;
   name: string;
@@ -109,17 +109,17 @@ export interface Team { // チーム一覧で表示する基本的なチーム�
   region: string; 
 }
 
-export interface TeamDetail { // 特定チームの詳細情報
+export interface TeamDetail { 
   info: {
     id: string;
     url: string;
     name: string;
-    tag: string; // チームタグ
+    tag: string; 
     logo: string;
     website: string;
     twitter: string;
     country: string;
-    region?: string; // ★ TeamDetail.info に region をオプショナルで追加 (APIレスポンスに依存)
+    region?: string; // ★ TeamDetail.info に region をオプショナルで追加
   };
   roster: {
     id: string;
@@ -127,7 +127,7 @@ export interface TeamDetail { // 特定チームの詳細情報
     name: string;
     country: string;
   }[];
-  results: MatchResult[]; // チームの試合結果
+  results: MatchResult[]; 
 }
 
 export interface PaginatedResponse<T> {
@@ -196,7 +196,7 @@ export interface CareerPhase {
   start_date: string; 
   end_date: string;   
   team_name?: string;
-  team_tag?: string; // フェーズごとのチームタグも追加
+  team_tag?: string; 
   description: string;
   key_stats: { 
     matches_played?: number;
@@ -213,9 +213,9 @@ export interface PlayerGrowthStory {
     player_id: string;
     name: string;
     full_name: string;
-    team: string; // 現在のチーム名
+    team: string; 
     team_id: string;
-    team_tag?: string; // 現在のチームタグ
+    team_tag?: string; 
     country: string;
     image_url: string;
     url: string;
@@ -321,7 +321,7 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
         full_name: playerData.info.name,
         team: playerData.team?.name || 'N/A',
         team_id: playerData.team?.id || 'N/A',
-        team_tag: playerData.team?.tag, // ★ team.tag を参照
+        team_tag: playerData.team?.tag, 
         country: playerData.info.country,
         image_url: playerData.info.img,
         url: playerData.info.url,
@@ -348,14 +348,9 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
         const team1 = teams[0] || {};
         const team2 = teams[1] || {};
         
-        // プレイヤーがどちらのチームにいたかを判定するロジックを改善
-        // (現在のチームだけでなく、過去のチーム情報も考慮に入れる必要があるかもしれないが、
-        //  ここではAPIが返すチーム情報とプレイヤーの現在のチーム情報を照合する)
         let playerTeamDetails = team1;
         let opponentTeamDetails = team2;
 
-        // プレイヤーの現在のチーム情報 (playerData.team) と試合のチーム情報を比較
-        // チーム名またはチームタグで照合
         if (playerData.team && 
             (team2.name?.toLowerCase() === playerData.team.name?.toLowerCase() || 
              (playerData.team.tag && team2.tag?.toLowerCase() === playerData.team.tag?.toLowerCase())
@@ -363,12 +358,7 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
            ) {
             playerTeamDetails = team2;
             opponentTeamDetails = team1;
-        } else if (!playerData.team && teams.length === 2) {
-            // プレイヤーの現在のチーム情報がない場合、どちらをプレイヤーチームとするか判断が難しい
-            // ここでは仮に team1 をプレイヤーチームとするが、APIの仕様次第で調整が必要
-            // もしくは、player_stats がどちらのチームのプレイヤーのものかを示す情報がAPIにあればそれを利用
         }
-
         
         const playerScore = parseInt(playerTeamDetails.points || '0');
         const opponentScore = parseInt(opponentTeamDetails.points || '0');
@@ -453,7 +443,7 @@ export async function generatePlayerGrowthStory(playerId: string): Promise<Playe
             name: playerData.team.name,
             logo: playerData.team.logo,
             joined: playerData.team.joined,
-            left: 'Present', // 現在所属
+            left: 'Present', 
             tag: playerData.team.tag 
         });
     }
