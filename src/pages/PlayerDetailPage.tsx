@@ -16,8 +16,7 @@ import {
   Twitch,
   AlertTriangle, 
 } from 'lucide-react';
-// PlayerOverallMapStat, PerformanceTrendPoint, ProcessedMatch の import を削除
-// AgentStatSummary と CareerPhase は apiService から export されるようになった
+// ★ AgentStatSummary と CareerPhase を正しくインポート
 import { generatePlayerGrowthStory, PlayerGrowthStory, CareerPhase, AgentStatSummary } from '../api/apiService'; 
 import PerformanceChart from '../components/PerformanceChart';
 import AgentStatsChart from '../components/AgentStatsChart';
@@ -210,8 +209,8 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
 };
 
 interface QuickStatsProps {
-  careerPhases: CareerPhase[]; // 型を CareerPhase[] に修正
-  agentStats: AgentStatSummary[]; 
+  careerPhases: CareerPhase[]; 
+  agentStats: AgentStatSummary[]; // ★ AgentStatSummary を使用
   matchCount: number;
 }
 

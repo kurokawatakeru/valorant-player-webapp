@@ -129,7 +129,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
                     label += context.parsed.y.toFixed(2);
                 }
                  else {
-                    label += context.parsed.y.toFixed(1);
+                    label += context.parsed.y.toFixed(1); // ACSなど
                 }
               }
               return label;
@@ -139,9 +139,10 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
       },
       scales: {
         y: {
-          // 'win_rate' との比較を削除
+          // ★ 'win_rate' との比較を削除し、hs_percentage の beginAtZero を false に変更
           beginAtZero: metric === 'hs_percentage' ? false : (metric === 'kd_ratio' ? false : undefined),
-          min: metric === 'kd_ratio' ? 0.5 : undefined, 
+          min: metric === 'kd_ratio' ? 0.5 : (metric === 'hs_percentage' ? 0 : undefined), // HS% は 0 から 1 の範囲
+          max: metric === 'hs_percentage' ? 1 : undefined, // HS% は最大 1 (100%)
           title: {
             display: true,
             text: getYAxisLabel(metric),
