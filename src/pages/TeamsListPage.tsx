@@ -3,18 +3,18 @@ import { Link } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
-  Shield, // Team icon
-  Globe,  // Region icon
+  Shield, 
+  Globe,  
   List,
   Grid3X3,
   Users,
   X
 } from 'lucide-react';
-import { getTeams, Team } from '../api/apiService'; // getTeams と Team 型をインポート
-import { LoadingStates } from '../components/ui/LoadingSpinner'; // ローディングコンポーネント
-import { Input } from '@/components/ui/input'; // Inputコンポーネント
-import { Button } from '@/components/ui/button'; // Buttonコンポーネント
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Selectコンポーネント
+import { getTeams, Team } from '../api/apiService'; 
+import { LoadingStates } from '../components/ui/LoadingSpinner'; 
+import { Input } from '@/components/ui/input'; 
+import { Button } from '@/components/ui/button'; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; 
 
 // Team Card Skeleton Component
 const TeamCardSkeleton: React.FC = () => (
@@ -38,12 +38,12 @@ interface TeamCardProps {
 
 const TeamCard: React.FC<TeamCardProps> = ({ team, viewMode }) => {
   const [logoError, setLogoError] = useState(false);
-  const placeholderLogo = "https://placehold.co/100x100/e2e8f0/94a3b8?text=Team";
+  // const placeholderLogo = "https://placehold.co/100x100/e2e8f0/94a3b8?text=Team"; // ★ 未使用のためコメントアウトまたは削除
 
   if (viewMode === 'list') {
     return (
       <Link 
-        to={`/teams/${team.id}`} // TODO: チーム詳細ページへのリンク (将来的に実装)
+        to={`/teams/${team.id}`} 
         className="group block"
       >
         <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-6 flex items-center space-x-4 sm:space-x-6 hover:bg-gray-50">
@@ -78,8 +78,6 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, viewMode }) => {
                   <span>{team.region}</span>
                 </div>
               )}
-               {/* <span className="hidden sm:inline">•</span>
-              <span className="hidden sm:inline">選手数: N/A</span>  TODO: APIから選手数を取得できれば */}
             </div>
           </div>
           
@@ -94,7 +92,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, viewMode }) => {
   // Grid View
   return (
     <Link 
-      to={`/teams/${team.id}`} // TODO: チーム詳細ページへのリンク (将来的に実装)
+      to={`/teams/${team.id}`} 
       className="group"
     >
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
@@ -269,7 +267,7 @@ const TeamsListPage: React.FC = () => {
       const allTeams: Team[] = [];
       let currentPage = 1;
       let hasMorePages = true;
-      const limit = 100; // APIの1リクエストあたりの最大取得数に合わせる
+      const limit = 100; 
 
       try {
         while (hasMorePages) {
@@ -279,9 +277,9 @@ const TeamsListPage: React.FC = () => {
             hasMorePages = response.pagination.hasNextPage;
             currentPage++;
           } else {
-            hasMorePages = false; // データがないか、レスポンス形式が不正
+            hasMorePages = false; 
           }
-          if (currentPage > 20) { // 無限ループ防止 (最大2000チーム程度)
+          if (currentPage > 20) { 
              console.warn("Reached page limit while fetching teams.");
              hasMorePages = false;
           }
@@ -457,8 +455,6 @@ const TeamsListPage: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* TODO: Pagination (将来的に実装) */}
       </div>
     </div>
   );
