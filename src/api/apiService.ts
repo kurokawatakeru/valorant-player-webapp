@@ -364,39 +364,6 @@ export async function generatePlayerGrowthStory(
     });
     growthStory.career_phases = phases;
 
-    if (growthStory.career_phases.length === 0) {
-      growthStory.career_phases = [
-        {
-          phase_name: '初期キャリア (サンプル)',
-          start_date: '2020-01-01',
-          end_date: '2021-12-31',
-          team_name: 'サンプルチームA',
-          team_tag: 'SMPLA',
-          description: 'プロとしてのキャリアを開始した時期のサンプルデータです。',
-          key_stats: {
-            average_acs: 210,
-            average_kd_ratio: 1.05,
-            win_rate: '50%',
-            titles_won: 0,
-          },
-        },
-        {
-          phase_name: '成長期 (サンプル)',
-          start_date: '2022-01-01',
-          end_date: '現在',
-          team_name: 'サンプルチームB',
-          team_tag: 'SMPLB',
-          description:
-            'チームの中心選手として活躍し始めた時期のサンプルデータです。',
-          key_stats: {
-            average_acs: 245,
-            average_kd_ratio: 1.18,
-            win_rate: '60%',
-            titles_won: 1,
-          },
-        },
-      ];
-    }
     return growthStory;
   } catch (error) {
     console.error(`Failed to generate player growth story for ${playerId}:`, error);
