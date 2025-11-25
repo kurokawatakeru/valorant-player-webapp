@@ -1,23 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  Users, 
-  Trophy, 
-  // TrendingUp, // 修正点: 未使用のためコメントアウト
+import {
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  Users,
+  Trophy,
   Star,
-  // ArrowUpDown, // 修正点: 未使用のためコメントアウト
   Eye,
-  // ChevronDown, // 修正点: 未使用のためコメントアウト
-  X
+  X,
 } from 'lucide-react';
 import { getJapanesePlayers, Player } from '../api/apiService';
 
 // Loading Skeleton Component
-const PlayerCardSkeleton: React.FC = () => (
+const PlayerCardSkeleton: React.FC = memo(() => (
   <div className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
     <div className="h-48 bg-gray-200"></div>
     <div className="p-6">
@@ -26,7 +23,9 @@ const PlayerCardSkeleton: React.FC = () => (
       <div className="h-4 bg-gray-200 rounded w-1/2"></div>
     </div>
   </div>
-);
+));
+
+PlayerCardSkeleton.displayName = 'PlayerCardSkeleton';
 
 // Enhanced Player Card Component
 interface EnhancedPlayerCardProps {
@@ -34,22 +33,16 @@ interface EnhancedPlayerCardProps {
   viewMode: 'grid' | 'list';
 }
 
-const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMode }) => {
-  // 修正点: 未使用のためコメントアウト
-  // const [imageError, setImageError] = useState(false); 
-  
+const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = memo(({ player, viewMode }) => {
   if (viewMode === 'list') {
     return (
-      <Link 
-        to={`/players/${player.id}`}
-        className="group"
-      >
+      <Link to={`/players/${player.id}`} className="group">
         <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 flex items-center space-x-6 hover:bg-gray-50">
           {/* Avatar */}
           <div className="w-16 h-16 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
             <Users className="w-8 h-8 text-gray-400" />
           </div>
-          
+
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-3 mb-2">
@@ -68,7 +61,7 @@ const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMod
               <span>Active Player</span>
             </div>
           </div>
-          
+
           {/* Action */}
           <div className="flex items-center text-gray-400 group-hover:text-red-500 transition-colors duration-200">
             <Eye className="w-5 h-5" />
@@ -79,15 +72,12 @@ const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMod
   }
 
   return (
-    <Link 
-      to={`/players/${player.id}`}
-      className="group"
-    >
+    <Link to={`/players/${player.id}`} className="group">
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
         {/* Player Image */}
         <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
-          
+
           {/* Country Badge */}
           <div className="absolute top-3 left-3 z-20">
             <div className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
@@ -100,7 +90,7 @@ const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMod
             <Users className="w-16 h-16 text-gray-400" />
           </div>
         </div>
-        
+
         {/* Player Info */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
@@ -113,7 +103,7 @@ const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMod
               </span>
             )}
           </div>
-          
+
           {/* Action Button */}
           <div className="flex items-center justify-center py-2 text-gray-600 group-hover:text-red-500 transition-colors duration-200">
             <Eye className="w-4 h-4 mr-2" />
@@ -123,7 +113,9 @@ const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = ({ player, viewMod
       </div>
     </Link>
   );
-};
+});
+
+EnhancedPlayerCard.displayName = 'EnhancedPlayerCard';
 
 // Filter Component
 interface FilterComponentProps {
@@ -138,119 +130,203 @@ interface FilterComponentProps {
   filteredCount: number;
 }
 
-const FilterComponent: React.FC<FilterComponentProps> = ({
-  searchTerm,
-  setSearchTerm,
-  teamFilter,
-  setTeamFilter,
-  sortBy,
-  setSortBy,
-  teams,
-  totalCount,
-  filteredCount
-}) => {
-  const [showFilters, setShowFilters] = useState(false);
+const FilterComponent: React.FC<FilterComponentProps> = memo(
+  ({
+    searchTerm,
+    setSearchTerm,
+    teamFilter,
+    setTeamFilter,
+    sortBy,
+    setSortBy,
+    teams,
+    totalCount,
+    filteredCount,
+  }) => {
+    const [showFilters, setShowFilters] = useState(false);
 
-  return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8">
-      <div className="flex flex-col space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="選手名やチーム名で検索..."
-            className="w-full pl-12 pr-12 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-          />
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
-              showFilters ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <Filter className="w-5 h-5" />
-          </button>
-        </div>
+    const handleSearchChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(e.target.value);
+      },
+      [setSearchTerm]
+    );
 
-        {/* Results Count */}
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <span>
-            {filteredCount}件中{totalCount}件の選手を表示
-          </span>
-          {searchTerm && (
+    const handleTeamChange = useCallback(
+      (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setTeamFilter(e.target.value);
+      },
+      [setTeamFilter]
+    );
+
+    const handleSortChange = useCallback(
+      (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSortBy(e.target.value);
+      },
+      [setSortBy]
+    );
+
+    const handleClear = useCallback(() => {
+      setSearchTerm('');
+      setTeamFilter('');
+    }, [setSearchTerm, setTeamFilter]);
+
+    const toggleFilters = useCallback(() => {
+      setShowFilters((prev) => !prev);
+    }, []);
+
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8">
+        <div className="flex flex-col space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="選手名やチーム名で検索..."
+              className="w-full pl-12 pr-12 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+            />
             <button
-              onClick={() => {
-                setSearchTerm('');
-                setTeamFilter('');
-              }}
-              className="flex items-center text-red-500 hover:text-red-600 font-medium"
+              onClick={toggleFilters}
+              className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
+                showFilters
+                  ? 'text-red-500 bg-red-50'
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              <X className="w-4 h-4 mr-1" />
-              クリア
+              <Filter className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Results Count */}
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>
+              {filteredCount}件中{totalCount}件の選手を表示
+            </span>
+            {searchTerm && (
+              <button
+                onClick={handleClear}
+                className="flex items-center text-red-500 hover:text-red-600 font-medium"
+              >
+                <X className="w-4 h-4 mr-1" />
+                クリア
+              </button>
+            )}
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+              {/* Team Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">チーム</label>
+                <select
+                  value={teamFilter}
+                  onChange={handleTeamChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="">すべてのチーム</option>
+                  {teams.map((team) => (
+                    <option key={team} value={team}>
+                      {team}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">並び替え</label>
+                <select
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="name">名前順</option>
+                  <option value="team">チーム順</option>
+                  <option value="country">国順</option>
+                </select>
+              </div>
+
+              {/* Region Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">地域</label>
+                <select className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
+                  <option value="">すべての地域</option>
+                  <option value="jp">日本</option>
+                  <option value="kr">韓国</option>
+                  <option value="apac">APAC</option>
+                </select>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Advanced Filters */}
-        {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-            {/* Team Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                チーム
-              </label>
-              <select
-                value={teamFilter}
-                onChange={(e) => setTeamFilter(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
-              >
-                <option value="">すべてのチーム</option>
-                {teams.map((team) => (
-                  <option key={team} value={team}>
-                    {team}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                並び替え
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
-              >
-                <option value="name">名前順</option>
-                <option value="team">チーム順</option>
-                <option value="country">国順</option>
-              </select>
-            </div>
-
-            {/* Region Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                地域
-              </label>
-              <select
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
-              >
-                <option value="">すべての地域</option>
-                <option value="jp">日本</option>
-                <option value="kr">韓国</option>
-                <option value="apac">APAC</option>
-              </select>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+FilterComponent.displayName = 'FilterComponent';
+
+// View Toggle Component
+interface ViewToggleProps {
+  viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
+  filteredCount: number;
+  teamsCount: number;
+}
+
+const ViewToggle: React.FC<ViewToggleProps> = memo(
+  ({ viewMode, setViewMode, filteredCount, teamsCount }) => {
+    const handleGridClick = useCallback(() => setViewMode('grid'), [setViewMode]);
+    const handleListClick = useCallback(() => setViewMode('list'), [setViewMode]);
+
+    return (
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <span className="text-gray-600 font-medium">表示形式:</span>
+          <div className="flex bg-white rounded-lg p-1 shadow-sm">
+            <button
+              onClick={handleGridClick}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === 'grid'
+                  ? 'bg-red-500 text-white shadow-md'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Grid3X3 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleListClick}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === 'list'
+                  ? 'bg-red-500 text-white shadow-md'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="hidden md:flex items-center space-x-6 text-sm">
+          <div className="flex items-center text-gray-600">
+            <Users className="w-4 h-4 mr-1" />
+            {filteredCount} 選手
+          </div>
+          <div className="flex items-center text-gray-600">
+            <Trophy className="w-4 h-4 mr-1" />
+            {teamsCount} チーム
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+ViewToggle.displayName = 'ViewToggle';
 
 // Main PlayersListPage Component
 const PlayersListPage: React.FC = () => {
@@ -268,13 +344,15 @@ const PlayersListPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // 日本人プレイヤーを取得
         const japanesePlayersData = await getJapanesePlayers();
         setPlayers(japanesePlayersData);
-        
+
         // チームリストを抽出
-        const uniqueTeams = Array.from(new Set(japanesePlayersData.map(player => player.teamTag)))
+        const uniqueTeams = Array.from(
+          new Set(japanesePlayersData.map((player) => player.teamTag))
+        )
           .filter(Boolean)
           .sort();
         setTeams(uniqueTeams);
@@ -285,26 +363,27 @@ const PlayersListPage: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchPlayers();
   }, []);
 
   // フィルタリングとソート
   const filteredAndSortedPlayers = useMemo(() => {
     let result = [...players];
-    
+
     // 検索語でフィルタリング
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      result = result.filter(player => 
-        player.name.toLowerCase().includes(searchLower) || 
-        player.teamTag.toLowerCase().includes(searchLower)
+      result = result.filter(
+        (player) =>
+          player.name.toLowerCase().includes(searchLower) ||
+          player.teamTag.toLowerCase().includes(searchLower)
       );
     }
-    
+
     // チームでフィルタリング
     if (teamFilter) {
-      result = result.filter(player => player.teamTag === teamFilter);
+      result = result.filter((player) => player.teamTag === teamFilter);
     }
 
     // ソート
@@ -319,9 +398,14 @@ const PlayersListPage: React.FC = () => {
           return a.name.localeCompare(b.name);
       }
     });
-    
+
     return result;
   }, [players, searchTerm, teamFilter, sortBy]);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchTerm('');
+    setTeamFilter('');
+  }, []);
 
   if (loading) {
     return (
@@ -332,7 +416,7 @@ const PlayersListPage: React.FC = () => {
           </h1>
           <p className="text-gray-600">読み込み中...</p>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, index) => (
             <PlayerCardSkeleton key={index} />
@@ -351,7 +435,7 @@ const PlayersListPage: React.FC = () => {
             <h3 className="font-semibold">エラーが発生しました</h3>
           </div>
           <p>{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
           >
@@ -374,7 +458,7 @@ const PlayersListPage: React.FC = () => {
             {players.length}人の日本人プロプレイヤーの成長ストーリーを発見しよう
           </p>
         </div>
-        
+
         {/* Filter Section */}
         <FilterComponent
           searchTerm={searchTerm}
@@ -389,59 +473,24 @@ const PlayersListPage: React.FC = () => {
         />
 
         {/* View Toggle and Stats */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600 font-medium">表示形式:</span>
-            <div className="flex bg-white rounded-lg p-1 shadow-sm">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-all duration-200 ${
-                  viewMode === 'grid' 
-                    ? 'bg-red-500 text-white shadow-md' 
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <Grid3X3 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-all duration-200 ${
-                  viewMode === 'list' 
-                    ? 'bg-red-500 text-white shadow-md' 
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <List className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+        <ViewToggle
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          filteredCount={filteredAndSortedPlayers.length}
+          teamsCount={teams.length}
+        />
 
-          {/* Quick Stats */}
-          <div className="hidden md:flex items-center space-x-6 text-sm">
-            <div className="flex items-center text-gray-600">
-              <Users className="w-4 h-4 mr-1" />
-              {filteredAndSortedPlayers.length} 選手
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Trophy className="w-4 h-4 mr-1" />
-              {teams.length} チーム
-            </div>
-          </div>
-        </div>
-        
         {/* Players Grid/List */}
         {filteredAndSortedPlayers.length > 0 ? (
-          <div className={`${
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6' 
-              : 'space-y-4'
-          }`}>
+          <div
+            className={`${
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'
+                : 'space-y-4'
+            }`}
+          >
             {filteredAndSortedPlayers.map((player) => (
-              <EnhancedPlayerCard
-                key={player.id}
-                player={player}
-                viewMode={viewMode}
-              />
+              <EnhancedPlayerCard key={player.id} player={player} viewMode={viewMode} />
             ))}
           </div>
         ) : (
@@ -457,10 +506,7 @@ const PlayersListPage: React.FC = () => {
                 検索条件を変更するか、フィルターをリセットしてください
               </p>
               <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setTeamFilter('');
-                }}
+                onClick={handleResetFilters}
                 className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200 transform hover:scale-105"
               >
                 <X className="w-4 h-4 mr-2" />
@@ -474,11 +520,17 @@ const PlayersListPage: React.FC = () => {
         {filteredAndSortedPlayers.length > 0 && (
           <div className="mt-12 flex justify-center">
             <div className="flex items-center space-x-2">
-              <button className="px-4 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50" disabled>
+              <button
+                className="px-4 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+                disabled
+              >
                 前へ
               </button>
               <span className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium">1</span>
-              <button className="px-4 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50" disabled>
+              <button
+                className="px-4 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+                disabled
+              >
                 次へ
               </button>
             </div>

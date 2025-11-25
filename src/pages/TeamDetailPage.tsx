@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -26,8 +26,12 @@ const TeamDetailSkeleton: React.FC = () => (
 interface TeamHeaderProps {
   teamInfo: TeamDetail['info'];
 }
-const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
+const TeamHeader: React.FC<TeamHeaderProps> = memo(({ teamInfo }) => {
   const [logoError, setLogoError] = useState(false);
+
+  const handleLogoError = useCallback(() => {
+    setLogoError(true);
+  }, []);
 
   return (
     <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-3xl shadow-xl overflow-hidden mb-8">
@@ -38,11 +42,12 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
           <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center p-2 shadow-lg flex-shrink-0">
             {teamInfo.logo && !logoError ? (
-              <img 
-                src={teamInfo.logo} 
-                alt={`${teamInfo.name} logo`} 
+              <img
+                src={teamInfo.logo}
+                alt={`${teamInfo.name} logo`}
                 className="max-h-full max-w-full object-contain"
-                onError={() => setLogoError(true)}
+                loading="lazy"
+                onError={handleLogoError}
               />
             ) : (
               <Shield className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400" />
@@ -63,7 +68,12 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
               )}
               {teamInfo.country && (
                 <div className="flex items-center">
-                  <img src={`https://flagcdn.com/w20/${teamInfo.country.toLowerCase()}.png`} alt={teamInfo.country} className="w-5 h-auto mr-1.5 rounded-sm"/>
+                  <img
+                    src={`https://flagcdn.com/w20/${teamInfo.country.toLowerCase()}.png`}
+                    alt={teamInfo.country}
+                    className="w-5 h-auto mr-1.5 rounded-sm"
+                    loading="lazy"
+                  />
                   <span>{teamInfo.country}</span>
                 </div>
               )}
@@ -85,13 +95,15 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamInfo }) => {
       </div>
     </div>
   );
-};
+});
+
+TeamHeader.displayName = 'TeamHeader';
 
 // Roster Item Component
 interface RosterItemProps {
   player: TeamDetail['roster'][0];
 }
-const RosterItem: React.FC<RosterItemProps> = ({ player }) => (
+const RosterItem: React.FC<RosterItemProps> = memo(({ player }) => (
   <Link to={`/players/${player.id}`} className="block group">
     <Card className="hover:shadow-lg transition-shadow duration-200 hover:border-valorant-red">
       <CardContent className="p-4 flex items-center space-x-3">
@@ -105,15 +117,17 @@ const RosterItem: React.FC<RosterItemProps> = ({ player }) => (
       </CardContent>
     </Card>
   </Link>
-);
+));
+
+RosterItem.displayName = 'RosterItem';
 
 // Match History Item Component
 interface MatchHistoryItemProps {
   matchResult: MatchResult;
-  currentTeamName?: string; 
-  currentTeamTag?: string; 
+  currentTeamName?: string;
+  currentTeamTag?: string;
 }
-const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, currentTeamName, currentTeamTag }) => {
+const MatchHistoryItem: React.FC<MatchHistoryItemProps> = memo(({ matchResult, currentTeamName, currentTeamTag }) => {
   const { match, event, teams } = matchResult;
   const team1 = teams[0] || {};
   const team2 = teams[1] || {};
@@ -143,7 +157,7 @@ const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, curren
     <div className="p-3 sm:p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow bg-white">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
         <div className="flex items-center space-x-2 mb-1 sm:mb-0">
-          {event.logo && <img src={event.logo} alt={event.name} className="w-4 h-4 sm:w-5 sm:h-5 object-contain"/>}
+          {event.logo && <img src={event.logo} alt={event.name} className="w-4 h-4 sm:w-5 sm:h-5 object-contain" loading="lazy" />}
           <span className="font-medium text-gray-700 text-xs sm:text-sm truncate" title={event.name}>{event.name}</span>
         </div>
         <span className="text-xs text-gray-500">{match.date ? new Date(match.date).toLocaleDateString() : '日付不明'}</span>
@@ -168,7 +182,9 @@ const MatchHistoryItem: React.FC<MatchHistoryItemProps> = ({ matchResult, curren
       </div>
     </div>
   );
-};
+});
+
+MatchHistoryItem.displayName = 'MatchHistoryItem';
 
 const TeamDetailPage: React.FC = () => {
   const { teamId } = useParams<{ teamId: string }>();
@@ -235,11 +251,13 @@ const TeamDetailPage: React.FC = () => {
     );
   }
   
-  const recentMatches = teamDetail.results?.slice(0, 10).sort((a,b) => {
-    const dateA = a.match.date ? new Date(a.match.date).getTime() : 0;
-    const dateB = b.match.date ? new Date(b.match.date).getTime() : 0;
-    return dateB - dateA; 
-  }) || [];
+  const recentMatches = useMemo(() => {
+    return teamDetail.results?.slice(0, 10).sort((a, b) => {
+      const dateA = a.match.date ? new Date(a.match.date).getTime() : 0;
+      const dateB = b.match.date ? new Date(b.match.date).getTime() : 0;
+      return dateB - dateA;
+    }) || [];
+  }, [teamDetail.results]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
