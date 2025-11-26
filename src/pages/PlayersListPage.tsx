@@ -107,7 +107,7 @@ const EnhancedPlayerCard: React.FC<EnhancedPlayerCardProps> = memo(({ player, vi
           {/* Action Button */}
           <div className="flex items-center justify-center py-2 text-gray-600 group-hover:text-red-500 transition-colors duration-200">
             <Eye className="w-4 h-4 mr-2" />
-            <span className="text-sm font-medium">成長ストーリーを見る</span>
+            <span className="text-sm font-medium">詳細を見る</span>
           </div>
         </div>
       </div>
@@ -455,7 +455,7 @@ const PlayersListPage: React.FC = () => {
             日本人VALORANTプロプレイヤー一覧
           </h1>
           <p className="text-xl text-gray-600">
-            {players.length}人の日本人プロプレイヤーの成長ストーリーを発見しよう
+            {players.length}人の日本人プロプレイヤーのパフォーマンスデータを分析
           </p>
         </div>
 

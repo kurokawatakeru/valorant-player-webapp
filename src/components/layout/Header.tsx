@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Users, Trophy, FileText, Search, Shield } from 'lucide-react';
+import { Menu, X, Home, Users, Trophy, Search, Shield } from 'lucide-react';
 
 const Header: React.FC = memo(() => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,7 +10,6 @@ const Header: React.FC = memo(() => {
     { path: '/', label: 'ホーム', icon: Home },
     { path: '/players', label: '選手一覧', icon: Users },
     { path: '/teams', label: 'チーム一覧', icon: Shield },
-    { path: '/features', label: '特集記事', icon: FileText },
   ];
 
   const isActivePath = (path: string) => {
@@ -31,8 +30,8 @@ const Header: React.FC = memo(() => {
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
               <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="hidden sm:block">VALORANT Player Stories</span>
-            <span className="sm:hidden">VPS</span>
+            <span className="hidden sm:block">VALORANT Player Analytics</span>
+            <span className="sm:hidden">VPA</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-1">

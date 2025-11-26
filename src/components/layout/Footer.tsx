@@ -15,13 +15,13 @@ const Footer: React.FC = memo(() => {
                 <Trophy className="w-5 h-5 text-white" />
               </div>
               <h3 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-                VALORANT Player Stories
+                VALORANT Player Analytics
               </h3>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed mb-4">
-              VALORANTプロプレイヤーの成長過程をデータで可視化し、
-              「物語」として伝えるプラットフォーム。選手の軌跡を追い、
-              感動的な成長ストーリーを発見しよう。
+              VALORANTプロプレイヤーのパフォーマンスデータを可視化し、
+              統計分析を提供するプラットフォーム。選手の成績推移や
+              チーム比較など、詳細なデータ分析が可能です。
             </p>
           </div>
 
@@ -34,7 +34,6 @@ const Footer: React.FC = memo(() => {
                 { to: '/', label: 'ホーム' },
                 { to: '/players', label: '選手一覧' },
                 { to: '/teams', label: 'チーム一覧' },
-                { to: '/features', label: '特集記事' },
               ].map((link) => (
                 <li key={link.to}>
                   <Link
@@ -84,7 +83,7 @@ const Footer: React.FC = memo(() => {
         <div className="border-t border-gray-700 mt-6 sm:mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
             <p className="text-gray-400 text-xs sm:text-sm">
-              &copy; {currentYear} VALORANT Player Stories. All rights reserved.
+              &copy; {currentYear} VALORANT Player Analytics. All rights reserved.
             </p>
             <p className="text-gray-500 text-xs text-center md:text-right max-w-md">
               このサイトはRiot

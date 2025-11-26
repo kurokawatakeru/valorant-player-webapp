@@ -5,13 +5,12 @@ import {
   Users,
   Trophy,
   ArrowRight,
-  Play,
-  Heart,
-  Eye,
   BarChart3,
   Zap,
   Target,
-  Award,
+  Activity,
+  PieChart,
+  LineChart,
 } from 'lucide-react';
 import {
   getJapanesePlayers,
@@ -28,18 +27,18 @@ const HeroSection: React.FC = memo(() => {
   const heroSlides = useMemo(
     () => [
       {
-        title: 'データで紡ぐVALORANTプロの成長物語',
-        subtitle: '選手の軌跡をデータで可視化し、単なる統計ではなく「物語」として伝える',
+        title: 'VALORANT選手データ分析',
+        subtitle: '日本人プロ選手のパフォーマンスをデータで可視化',
         gradient: 'from-red-500 via-pink-500 to-purple-600',
       },
       {
-        title: '感動的な成長ストーリーを発見',
-        subtitle: '推し選手の知られざる過去や、成長の転機となった瞬間を体験',
+        title: '詳細な統計情報',
+        subtitle: 'ACS、K/D、エージェント使用率などを一覧で確認',
         gradient: 'from-teal-500 via-cyan-500 to-blue-600',
       },
       {
-        title: '比較分析で新たな発見を',
-        subtitle: '異なる選手間の成長パターンを比較し、戦略的インサイトを獲得',
+        title: 'キャリア推移を追跡',
+        subtitle: 'チーム移籍履歴とパフォーマンスの変化を分析',
         gradient: 'from-purple-500 via-indigo-500 to-blue-600',
       },
     ],
@@ -79,14 +78,14 @@ const HeroSection: React.FC = memo(() => {
                 選手を探す
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
-              <a
-                href="#featured"
+              <Link
+                to="/teams"
                 className="group inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105"
               >
-                <Play className="w-5 h-5 mr-2" />
-                注目の選手を見る
+                <Trophy className="w-5 h-5 mr-2" />
+                チーム一覧
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-              </a>
+              </Link>
             </div>
 
             {/* Slide Indicators */}
@@ -110,7 +109,7 @@ const HeroSection: React.FC = memo(() => {
 
 HeroSection.displayName = 'HeroSection';
 
-// Stats Overview Component - APIからデータ取得
+// Stats Overview Component
 interface StatsOverviewProps {
   playerCount: number;
   teamCount: number;
@@ -122,28 +121,28 @@ const StatsOverview: React.FC<StatsOverviewProps> = memo(({ playerCount, teamCou
       {
         icon: Users,
         value: playerCount > 0 ? playerCount.toLocaleString() : '-',
-        label: '日本人プレイヤー数',
+        label: '日本人プレイヤー',
         color: 'text-blue-500',
         bgColor: 'bg-blue-50',
       },
       {
         icon: Trophy,
         value: teamCount > 0 ? teamCount.toLocaleString() : '-',
-        label: 'アクティブチーム',
+        label: 'チーム数',
         color: 'text-purple-500',
         bgColor: 'bg-purple-50',
       },
       {
         icon: BarChart3,
-        value: '成長分析',
-        label: 'データ可視化',
+        value: 'ACS / K/D',
+        label: '統計分析',
         color: 'text-teal-500',
         bgColor: 'bg-teal-50',
       },
       {
-        icon: Award,
+        icon: Activity,
         value: 'リアルタイム',
-        label: 'API連携',
+        label: 'VLR.gg連携',
         color: 'text-red-500',
         bgColor: 'bg-red-50',
       },
@@ -195,14 +194,13 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
   const { player, growthStory } = data;
   const [imageError, setImageError] = useState(false);
 
-  // 成績データを取得
   const stats = useMemo(() => {
     if (!growthStory || !growthStory.performance_trends.length) {
       return { acs: '-', kd: '-', matches: 0 };
     }
 
     const trends = growthStory.performance_trends;
-    const recentTrends = trends.slice(-10); // 直近10試合
+    const recentTrends = trends.slice(-10);
 
     const avgAcs =
       recentTrends.reduce((sum, t) => sum + (t.acs || 0), 0) / recentTrends.length || 0;
@@ -221,11 +219,9 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
   return (
     <Link to={`/players/${player.id}`} className="group">
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-        {/* Player Image */}
         <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10"></div>
 
-          {/* Trending Badge */}
           {isTrending && (
             <div className="absolute top-3 right-3 z-20">
               <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
@@ -235,14 +231,12 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
             </div>
           )}
 
-          {/* Country Flag */}
           <div className="absolute top-3 left-3 z-20">
             <div className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
               {player.country}
             </div>
           </div>
 
-          {/* Player Image or Placeholder */}
           <div className="w-full h-full flex items-center justify-center">
             {growthStory?.info.image_url && !imageError ? (
               <img
@@ -258,7 +252,6 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
           </div>
         </div>
 
-        {/* Player Info */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xl font-bold text-gray-900 group-hover:text-red-500 transition-colors duration-200">
@@ -271,7 +264,6 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
             )}
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="text-center">
               <div className="text-xs text-gray-500">ACS</div>
@@ -287,10 +279,9 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
             </div>
           </div>
 
-          {/* View Story Button */}
           <div className="flex items-center justify-center py-2 text-gray-600 group-hover:text-red-500 transition-colors duration-200">
-            <Eye className="w-4 h-4 mr-2" />
-            <span className="text-sm font-medium">成長ストーリーを見る</span>
+            <BarChart3 className="w-4 h-4 mr-2" />
+            <span className="text-sm font-medium">詳細を見る</span>
           </div>
         </div>
       </div>
@@ -300,7 +291,7 @@ const FeaturedPlayerCard: React.FC<FeaturedPlayerCardProps> = memo(({ data, inde
 
 FeaturedPlayerCard.displayName = 'FeaturedPlayerCard';
 
-// Featured Players Component - APIからデータ取得
+// Featured Players Component
 interface FeaturedPlayersProps {
   featuredData: FeaturedPlayerData[];
   loading: boolean;
@@ -313,7 +304,7 @@ const FeaturedPlayers: React.FC<FeaturedPlayersProps> = memo(({ featuredData, lo
         <div className="flex justify-between items-center mb-12">
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-2">注目の選手</h2>
-            <p className="text-gray-600">日本を代表するVALORANTプロプレイヤーたち</p>
+            <p className="text-gray-600">日本を代表するVALORANTプロプレイヤー</p>
           </div>
           <Link
             to="/players"
@@ -352,7 +343,6 @@ const FeaturedPlayers: React.FC<FeaturedPlayersProps> = memo(({ featuredData, lo
           </div>
         )}
 
-        {/* Mobile View All Button */}
         <div className="mt-8 text-center md:hidden">
           <Link
             to="/players"
@@ -374,34 +364,34 @@ const FeaturesSection: React.FC = memo(() => {
   const features = useMemo(
     () => [
       {
-        icon: Heart,
-        title: '感情的価値',
+        icon: LineChart,
+        title: 'パフォーマンス推移',
         description:
-          'ファンにとって推し選手の成長が見える、共感できるストーリー体験を提供します。データの裏にある人間ドラマを発見しましょう。',
+          'ACS、K/D、HS%などの統計値を時系列でグラフ化。選手のコンディション変化を把握できます。',
         color: 'text-red-500',
         bgColor: 'bg-red-50',
       },
       {
-        icon: Eye,
-        title: '発見価値',
+        icon: PieChart,
+        title: 'エージェント分析',
         description:
-          '知らなかった選手の過去や、成長の転機となった試合を発見できます。隠された才能や努力の軌跡を明らかにします。',
+          '使用エージェントの分布と各エージェントでの成績を可視化。得意キャラクターが一目でわかります。',
         color: 'text-blue-500',
         bgColor: 'bg-blue-50',
       },
       {
         icon: BarChart3,
-        title: '比較価値',
+        title: 'マップ別統計',
         description:
-          '似たような軌跡の選手を発見し、異なる選手間の成長パターンを比較できます。戦略的インサイトを獲得しましょう。',
+          'マップごとの勝率や成績を表示。選手の得意マップ・苦手マップを分析できます。',
         color: 'text-teal-500',
         bgColor: 'bg-teal-50',
       },
       {
         icon: Target,
-        title: '予測価値',
+        title: 'キャリア履歴',
         description:
-          '過去のデータから未来のパフォーマンスを予測し、選手の潜在能力や成長可能性を分析します。',
+          'チーム移籍履歴と各チームでの成績を時系列で表示。キャリアの軌跡を追跡できます。',
         color: 'text-purple-500',
         bgColor: 'bg-purple-50',
       },
@@ -410,16 +400,13 @@ const FeaturesSection: React.FC = memo(() => {
   );
 
   return (
-    <section className="py-20">
+    <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              VALORANTプレイヤー成長ストーリーサイトについて
-            </h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">分析機能</h2>
             <p className="text-xl text-gray-600 leading-relaxed">
-              当サイトは、VALORANTプロプレイヤーの成長過程をデータで可視化し、
-              単なる統計ではなく「物語」として伝えることを目指しています。
+              VLR.ggのデータをもとに、選手のパフォーマンスを多角的に分析
             </p>
           </div>
 
@@ -461,13 +448,11 @@ const CTASection: React.FC = memo(() => {
 
           <div className="relative z-10 text-center py-16 px-8">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              あなたの推し選手の
-              <br />
-              成長ストーリーを発見しよう
+              選手データを分析しよう
             </h2>
             <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-              日本人プロプレイヤーのデータから、感動的な成長の軌跡を追体験。
-              今すぐ始めて、新たな発見を楽しみましょう。
+              日本人プロプレイヤーの詳細な統計情報をチェック。
+              パフォーマンスの推移やエージェント使用率を確認できます。
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -476,13 +461,13 @@ const CTASection: React.FC = memo(() => {
                 className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl"
               >
                 <Zap className="w-5 h-5 mr-2" />
-                今すぐ始める
+                選手を探す
               </Link>
               <Link
                 to="/teams"
                 className="inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105"
               >
-                チームを見る
+                チーム一覧
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </div>
@@ -495,13 +480,8 @@ const CTASection: React.FC = memo(() => {
 
 CTASection.displayName = 'CTASection';
 
-// 注目選手のIDリスト（vlr.ggで人気の日本人選手）
-const FEATURED_PLAYER_IDS = [
-  '24210', // Dep
-  '8329', // Laz
-  '36560', // crow
-  '29547', // SugarZ3ro
-];
+// 注目選手のIDリスト
+const FEATURED_PLAYER_IDS = ['24210', '8329', '36560', '29547'];
 
 // Main HomePage Component
 const HomePage: React.FC = () => {
@@ -515,21 +495,17 @@ const HomePage: React.FC = () => {
       setLoading(true);
 
       try {
-        // 日本人プレイヤー数を取得
         const players = await getJapanesePlayers(100);
         setPlayerCount(players.length);
 
-        // チーム数を取得
         const teamsResponse = await getTeams(100, 1);
         if (teamsResponse?.pagination) {
           setTeamCount(teamsResponse.pagination.totalElements);
         }
 
-        // 注目選手のデータを取得
         const featuredPromises = FEATURED_PLAYER_IDS.map(async (id) => {
           const player = players.find((p) => p.id === id);
           if (!player) {
-            // プレイヤーリストに無い場合はプレースホルダー
             return {
               player: { id, name: 'Unknown', teamTag: '', country: 'JP', url: '' },
               growthStory: null,

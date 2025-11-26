@@ -43,7 +43,7 @@ interface TabNavigationProps {
 
 const TabNavigation: React.FC<TabNavigationProps> = memo(({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: 'growth-story', label: '成長ストーリー', icon: TrendingUp },
+    { id: 'growth-story', label: 'パフォーマンス', icon: TrendingUp },
     { id: 'detailed-stats', label: '詳細統計', icon: BarChart3 },
     { id: 'match-history', label: '試合履歴', icon: Trophy },
   ];
@@ -87,8 +87,8 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = memo(({ playerInfo }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${playerInfo.name}の成長ストーリー`,
-          text: `${playerInfo.name}のVALORANT成長ストーリーをチェック！`,
+          title: `${playerInfo.name} - VALORANT選手データ`,
+          text: `${playerInfo.name}のVALORANT統計データをチェック！`,
           url: window.location.href,
         });
       } catch (err) {

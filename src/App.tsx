@@ -9,7 +9,6 @@ const PlayersListPage = lazy(() => import('./pages/PlayersListPage'));
 const PlayerDetailPage = lazy(() => import('./pages/PlayerDetailPage'));
 const TeamsListPage = lazy(() => import('./pages/TeamsListPage'));
 const TeamDetailPage = lazy(() => import('./pages/TeamDetailPage'));
-const FeaturesPage = lazy(() => import('./pages/FeaturesPage'));
 
 // Main App Component
 const App: React.FC = () => {
@@ -26,7 +25,6 @@ const App: React.FC = () => {
               <Route path="/players/:playerId" element={<PlayerDetailPage />} />
               <Route path="/teams" element={<TeamsListPage />} />
               <Route path="/teams/:teamId" element={<TeamDetailPage />} />
-              <Route path="/features" element={<FeaturesPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
