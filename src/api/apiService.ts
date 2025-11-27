@@ -42,6 +42,49 @@ const API_BASE_URL = 'https://vlr.orlandomm.net/api/v1';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
+// キャッシュの有効期限 (5分)
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+// シンプルなインメモリキャッシュ
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  totalElements?: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+
+function getCacheKey(endpoint: string, params?: Record<string, string | number>): string {
+  const paramStr = params ? JSON.stringify(params) : '';
+  return `${endpoint}:${paramStr}`;
+}
+
+function getFromCache<T>(key: string): CacheEntry<T> | null {
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
+  if (!entry) return null;
+
+  // TTLチェック
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    cache.delete(key);
+    return null;
+  }
+
+  return entry;
+}
+
+function setCache<T>(key: string, data: T, totalElements?: number): void {
+  cache.set(key, {
+    data,
+    timestamp: Date.now(),
+    totalElements,
+  });
+}
+
+// キャッシュをクリアする関数（必要に応じて使用）
+export function clearApiCache(): void {
+  cache.clear();
+}
+
 // カスタムエラークラス
 export class ApiError extends Error {
   constructor(
@@ -130,23 +173,58 @@ export async function getPlayers(
 ): Promise<PaginatedResponse<Player>> {
   const params: Record<string, string | number> = { limit, page };
   if (country) params.country = country;
-  return fetchFromApi<PaginatedResponse<Player>>('players', params);
+
+  // キャッシュチェック
+  const cacheKey = getCacheKey('players', params);
+  const cached = getFromCache<PaginatedResponse<Player>>(cacheKey);
+  if (cached) {
+    return cached.data;
+  }
+
+  const response = await fetchFromApi<PaginatedResponse<Player>>('players', params);
+  setCache(cacheKey, response, response.pagination?.totalElements);
+  return response;
 }
 
+// 選手一覧とメタデータを含む結果
+export interface PlayersResult {
+  players: Player[];
+  totalElements: number;
+}
+
+// キャッシュキー
+const ALL_PLAYERS_CACHE_KEY = 'all_players';
+
 export async function getAllPlayers(limit: number = 100, country?: string): Promise<Player[]> {
+  // キャッシュチェック（国フィルターなしの場合のみ）
+  if (!country) {
+    const cached = getFromCache<Player[]>(ALL_PLAYERS_CACHE_KEY);
+    if (cached) {
+      return cached.data;
+    }
+  }
+
   const players: Player[] = [];
   let page = 1;
   let hasNextPage = true;
+  let totalElements = 0;
+
   try {
     while (hasNextPage) {
       const response = await getPlayers(limit, page, country);
       if (response && response.data) {
         players.push(...response.data);
         hasNextPage = response.pagination.hasNextPage;
+        totalElements = response.pagination.totalElements || players.length;
         if (hasNextPage) page++;
       } else {
         hasNextPage = false;
       }
+    }
+
+    // 国フィルターなしの場合はキャッシュに保存
+    if (!country) {
+      setCache(ALL_PLAYERS_CACHE_KEY, players, totalElements);
     }
   } catch (error) {
     console.error('Failed to fetch players:', error);
@@ -154,10 +232,59 @@ export async function getAllPlayers(limit: number = 100, country?: string): Prom
   return players;
 }
 
+// 選手一覧と総数を取得（HomePageで使用）
+export async function getAllPlayersWithCount(limit: number = 100): Promise<PlayersResult> {
+  // キャッシュチェック
+  const cached = getFromCache<Player[]>(ALL_PLAYERS_CACHE_KEY);
+  if (cached) {
+    return {
+      players: cached.data,
+      totalElements: cached.totalElements || cached.data.length,
+    };
+  }
+
+  const players: Player[] = [];
+  let page = 1;
+  let hasNextPage = true;
+  let totalElements = 0;
+
+  try {
+    while (hasNextPage) {
+      const response = await getPlayers(limit, page);
+      if (response && response.data) {
+        players.push(...response.data);
+        hasNextPage = response.pagination.hasNextPage;
+        totalElements = response.pagination.totalElements || 0;
+        if (hasNextPage) page++;
+      } else {
+        hasNextPage = false;
+      }
+    }
+
+    setCache(ALL_PLAYERS_CACHE_KEY, players, totalElements);
+  } catch (error) {
+    console.error('Failed to fetch players:', error);
+  }
+
+  return {
+    players,
+    totalElements: totalElements || players.length,
+  };
+}
+
 export async function getPlayerDetail(
   playerId: string
 ): Promise<ApiResponse<PlayerDetail>> {
-  return fetchFromApi<ApiResponse<PlayerDetail>>(`players/${playerId}`);
+  // キャッシュチェック
+  const cacheKey = getCacheKey(`players/${playerId}`, {});
+  const cached = getFromCache<ApiResponse<PlayerDetail>>(cacheKey);
+  if (cached) {
+    return cached.data;
+  }
+
+  const response = await fetchFromApi<ApiResponse<PlayerDetail>>(`players/${playerId}`);
+  setCache(cacheKey, response);
+  return response;
 }
 
 export async function getTeams(
@@ -167,18 +294,44 @@ export async function getTeams(
 ): Promise<PaginatedResponse<Team>> {
   const params: Record<string, string | number> = { limit, page };
   if (region) params.region = region;
-  return fetchFromApi<PaginatedResponse<Team>>('teams', params);
+
+  // キャッシュチェック
+  const cacheKey = getCacheKey('teams', params);
+  const cached = getFromCache<PaginatedResponse<Team>>(cacheKey);
+  if (cached) {
+    return cached.data;
+  }
+
+  const response = await fetchFromApi<PaginatedResponse<Team>>('teams', params);
+  setCache(cacheKey, response, response.pagination?.totalElements);
+  return response;
 }
 
 export async function getTeamDetail(
   teamId: string
 ): Promise<ApiResponse<TeamDetail>> {
-  return fetchFromApi<ApiResponse<TeamDetail>>(`teams/${teamId}`);
+  // キャッシュチェック
+  const cacheKey = getCacheKey(`teams/${teamId}`, {});
+  const cached = getFromCache<ApiResponse<TeamDetail>>(cacheKey);
+  if (cached) {
+    return cached.data;
+  }
+
+  const response = await fetchFromApi<ApiResponse<TeamDetail>>(`teams/${teamId}`);
+  setCache(cacheKey, response);
+  return response;
 }
 
 export async function generatePlayerGrowthStory(
   playerId: string
 ): Promise<PlayerGrowthStory | null> {
+  // キャッシュチェック
+  const cacheKey = getCacheKey(`growth_story/${playerId}`, {});
+  const cached = getFromCache<PlayerGrowthStory>(cacheKey);
+  if (cached) {
+    return cached.data;
+  }
+
   try {
     const playerResponse = await getPlayerDetail(playerId);
     if (!playerResponse || !playerResponse.data) {
@@ -419,6 +572,9 @@ export async function generatePlayerGrowthStory(
       });
     });
     growthStory.career_phases = phases;
+
+    // キャッシュに保存
+    setCache(cacheKey, growthStory);
 
     return growthStory;
   } catch (error) {

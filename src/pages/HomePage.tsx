@@ -13,7 +13,7 @@ import {
   LineChart,
 } from 'lucide-react';
 import {
-  getAllPlayers,
+  getAllPlayersWithCount,
   getTeams,
   generatePlayerGrowthStory,
   Player,
@@ -521,14 +521,17 @@ const HomePage: React.FC = () => {
       setLoading(true);
 
       try {
-        const players = await getAllPlayers(100);
-        setPlayerCount(players.length);
+        // 選手データと総数を取得（キャッシュ対応）
+        const { players, totalElements } = await getAllPlayersWithCount(100);
+        setPlayerCount(totalElements);
 
+        // チームデータ取得（キャッシュ対応）
         const teamsResponse = await getTeams(100, 1);
         if (teamsResponse?.pagination) {
           setTeamCount(teamsResponse.pagination.totalElements);
         }
 
+        // 注目選手のデータ取得（並列処理）
         const featuredPromises = FEATURED_PLAYER_IDS.map(async (id) => {
           const player = players.find((p) => p.id === id);
           if (!player) {
