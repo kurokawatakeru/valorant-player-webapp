@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -10,14 +10,19 @@ import {
   TrendingUp,
   BarChart3,
   Award,
-  Calendar, 
+  Calendar,
   Flag,
   Twitter,
   Twitch,
-  AlertTriangle, 
-  // Link2, // ★ 未使用のため削除
+  AlertTriangle,
 } from 'lucide-react';
-import { generatePlayerGrowthStory, PlayerGrowthStory, CareerPhase, AgentStatSummary } from '../api/apiService'; 
+import {
+  generatePlayerGrowthStory,
+  PlayerGrowthStory,
+  CareerPhase,
+  AgentStatSummary,
+  ProcessedMatch,
+} from '../api/apiService';
 import PerformanceChart from '../components/PerformanceChart';
 import AgentStatsChart from '../components/AgentStatsChart';
 import MapStatsChart from '../components/MapStatsChart';
@@ -25,7 +30,10 @@ import CareerTimeline from '../components/CareerTimeline';
 import { LoadingStates } from '../components/ui/LoadingSpinner';
 
 const PlayerDetailSkeleton: React.FC = () => (
-  <LoadingStates.Page title="プレイヤーデータを読み込み中..." description="詳細情報を取得しています。少々お待ちください。" />
+  <LoadingStates.Page
+    title="プレイヤーデータを読み込み中..."
+    description="詳細情報を取得しています。少々お待ちください。"
+  />
 );
 
 interface TabNavigationProps {
@@ -33,9 +41,9 @@ interface TabNavigationProps {
   setActiveTab: (tab: string) => void;
 }
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }) => {
+const TabNavigation: React.FC<TabNavigationProps> = memo(({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: 'growth-story', label: '成長ストーリー', icon: TrendingUp },
+    { id: 'growth-story', label: 'パフォーマンス', icon: TrendingUp },
     { id: 'detailed-stats', label: '詳細統計', icon: BarChart3 },
     { id: 'match-history', label: '試合履歴', icon: Trophy },
   ];
@@ -63,54 +71,66 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
       </nav>
     </div>
   );
-};
+});
+
+TabNavigation.displayName = 'TabNavigation';
 
 interface PlayerHeaderProps {
   playerInfo: PlayerGrowthStory['info'];
 }
 
-const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
+const PlayerHeader: React.FC<PlayerHeaderProps> = memo(({ playerInfo }) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${playerInfo.name}の成長ストーリー`,
-          text: `${playerInfo.name}のVALORANT成長ストーリーをチェック！`,
+          title: `${playerInfo.name} - VALORANT選手データ`,
+          text: `${playerInfo.name}のVALORANT統計データをチェック！`,
           url: window.location.href,
         });
       } catch (err) {
         console.error('Share failed:', err);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href)
+      navigator.clipboard
+        .writeText(window.location.href)
         .then(() => {
           alert('URLをクリップボードにコピーしました！');
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('Failed to copy URL: ', err);
         });
     }
-  };
+  }, [playerInfo.name]);
+
+  const toggleFavorite = useCallback(() => {
+    setIsFavorited((prev) => !prev);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+  }, []);
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl overflow-hidden mb-8">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
         <div className="absolute inset-0 bg-detail-pattern opacity-50"></div>
-        
+
         <div className="relative z-10 p-6 sm:p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-8">
             <div className="relative self-center md:self-start">
               <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full overflow-hidden border-4 border-white shadow-xl">
                 {playerInfo.image_url && !imageError ? (
-                  <img 
-                    src={playerInfo.image_url} 
-                    alt={playerInfo.name} 
+                  <img
+                    src={playerInfo.image_url}
+                    alt={playerInfo.name}
                     className="w-full h-full object-cover"
-                    onError={() => setImageError(true)}
+                    loading="lazy"
+                    onError={handleImageError}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -122,7 +142,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
               </div>
             </div>
-            
+
             <div className="flex-1">
               <div className="mb-3 sm:mb-4">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-1 sm:mb-2">
@@ -143,11 +163,15 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                   )}
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
                 {playerInfo.social_links.twitter && (
-                  <a 
-                    href={playerInfo.social_links.twitter.startsWith('http') ? playerInfo.social_links.twitter : `https://twitter.com/${playerInfo.social_links.twitter}`}
+                  <a
+                    href={
+                      playerInfo.social_links.twitter.startsWith('http')
+                        ? playerInfo.social_links.twitter
+                        : `https://twitter.com/${playerInfo.social_links.twitter}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors duration-200 text-xs sm:text-sm shadow hover:shadow-md"
@@ -157,8 +181,12 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                   </a>
                 )}
                 {playerInfo.social_links.twitch && (
-                  <a 
-                    href={playerInfo.social_links.twitch.startsWith('http') ? playerInfo.social_links.twitch : `https://twitch.tv/${playerInfo.social_links.twitch}`}
+                  <a
+                    href={
+                      playerInfo.social_links.twitch.startsWith('http')
+                        ? playerInfo.social_links.twitch
+                        : `https://twitch.tv/${playerInfo.social_links.twitch}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 text-xs sm:text-sm shadow hover:shadow-md"
@@ -168,7 +196,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                   </a>
                 )}
                 {playerInfo.url && (
-                  <a 
+                  <a
                     href={playerInfo.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -179,10 +207,10 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
                   </a>
                 )}
               </div>
-              
+
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <button
-                  onClick={() => setIsFavorited(!isFavorited)}
+                  onClick={toggleFavorite}
                   className={`flex items-center space-x-2 px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base shadow hover:shadow-md ${
                     isFavorited
                       ? 'bg-red-500 text-white hover:bg-red-600'
@@ -206,24 +234,27 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ playerInfo }) => {
       </div>
     </div>
   );
-};
+});
+
+PlayerHeader.displayName = 'PlayerHeader';
 
 interface QuickStatsProps {
-  careerPhases: CareerPhase[]; 
-  agentStats: AgentStatSummary[]; 
+  careerPhases: CareerPhase[];
+  agentStats: AgentStatSummary[];
   matchCount: number;
 }
 
-const QuickStats: React.FC<QuickStatsProps> = ({ careerPhases, agentStats, matchCount }) => {
-  const totalCareerYears = () => {
+const QuickStats: React.FC<QuickStatsProps> = memo(({ careerPhases, agentStats, matchCount }) => {
+  const totalCareerYears = useMemo(() => {
     if (!careerPhases || careerPhases.length === 0) return 'N/A';
     const firstPhase = careerPhases[0];
     const lastPhase = careerPhases[careerPhases.length - 1];
     if (!firstPhase?.start_date) return 'N/A';
 
     const startDate = new Date(firstPhase.start_date);
-    const endDate = lastPhase?.end_date === '現在' ? new Date() : new Date(lastPhase?.end_date || new Date());
-    
+    const endDate =
+      lastPhase?.end_date === '現在' ? new Date() : new Date(lastPhase?.end_date || new Date());
+
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 'N/A';
 
     let years = endDate.getFullYear() - startDate.getFullYear();
@@ -233,40 +264,153 @@ const QuickStats: React.FC<QuickStatsProps> = ({ careerPhases, agentStats, match
       months += 12;
     }
     if (years < 0) return 'N/A';
-    return years > 0 ? `${years}年${months > 0 ? `${months}ヶ月` : ''}` : `${months > 0 ? `${months}ヶ月` : '1ヶ月未満'}`;
-  };
+    return years > 0
+      ? `${years}年${months > 0 ? `${months}ヶ月` : ''}`
+      : `${months > 0 ? `${months}ヶ月` : '1ヶ月未満'}`;
+  }, [careerPhases]);
 
   const uniqueAgentCount = agentStats?.length || 0;
-  
-  const titlesWon = careerPhases?.reduce((acc, phase) => acc + (phase.key_stats.titles_won || 0), 0) || 0;
 
-  const stats = [
-    { label: '総試合数', value: matchCount > 0 ? matchCount : 'N/A', icon: Trophy, color: 'text-blue-500', bgColor: 'bg-blue-50' },
-    { label: 'キャリア期間', value: totalCareerYears(), icon: Calendar, color: 'text-teal-500', bgColor: 'bg-teal-50' },
-    { label: '使用エージェント数', value: uniqueAgentCount > 0 ? uniqueAgentCount : 'N/A', icon: Users, color: 'text-purple-500', bgColor: 'bg-purple-50' },
-    { label: '獲得タイトル', value: titlesWon > 0 ? titlesWon : 'N/A', icon: Award, color: 'text-yellow-500', bgColor: 'bg-yellow-50' }
-  ];
+  const titlesWon = useMemo(
+    () => careerPhases?.reduce((acc, phase) => acc + (phase.key_stats.titles_won || 0), 0) || 0,
+    [careerPhases]
+  );
+
+  const stats = useMemo(
+    () => [
+      {
+        label: '総試合数',
+        value: matchCount > 0 ? matchCount : 'N/A',
+        icon: Trophy,
+        color: 'text-blue-500',
+        bgColor: 'bg-blue-50',
+      },
+      {
+        label: 'キャリア期間',
+        value: totalCareerYears,
+        icon: Calendar,
+        color: 'text-teal-500',
+        bgColor: 'bg-teal-50',
+      },
+      {
+        label: '使用エージェント数',
+        value: uniqueAgentCount > 0 ? uniqueAgentCount : 'N/A',
+        icon: Users,
+        color: 'text-purple-500',
+        bgColor: 'bg-purple-50',
+      },
+      {
+        label: '獲得タイトル',
+        value: titlesWon > 0 ? titlesWon : 'N/A',
+        icon: Award,
+        color: 'text-yellow-500',
+        bgColor: 'bg-yellow-50',
+      },
+    ],
+    [matchCount, totalCareerYears, uniqueAgentCount, titlesWon]
+  );
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div 
+          <div
             key={index}
             className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 text-center hover:shadow-xl transition-shadow duration-300"
           >
-            <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 ${stat.bgColor} ${stat.color} rounded-xl mb-2 sm:mb-3`}>
+            <div
+              className={`inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 ${stat.bgColor} ${stat.color} rounded-xl mb-2 sm:mb-3`}
+            >
               <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5 sm:mb-1">{stat.value}</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5 sm:mb-1">
+              {stat.value}
+            </div>
             <div className="text-xs sm:text-sm text-gray-600">{stat.label}</div>
           </div>
         );
       })}
     </div>
   );
-};
+});
+
+QuickStats.displayName = 'QuickStats';
+
+// Match History Item Component
+interface MatchHistoryItemProps {
+  match: ProcessedMatch;
+}
+
+const MatchHistoryItem: React.FC<MatchHistoryItemProps> = memo(({ match }) => {
+  return (
+    <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
+        <div className="flex items-center space-x-2 mb-2 sm:mb-0">
+          {match.event_logo && (
+            <img
+              src={match.event_logo}
+              alt={match.event}
+              className="w-5 h-5 object-contain"
+              loading="lazy"
+            />
+          )}
+          <span className="font-semibold text-gray-700 text-sm">{match.event}</span>
+        </div>
+        <span className="text-xs text-gray-500">{new Date(match.date).toLocaleDateString()}</span>
+      </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div className="flex items-center space-x-2">
+          <span
+            className={`font-bold text-lg ${
+              match.result === 'W'
+                ? 'text-green-500'
+                : match.result === 'L'
+                  ? 'text-red-500'
+                  : 'text-gray-500'
+            }`}
+          >
+            {match.result}
+          </span>
+          <span className="text-gray-800">{match.score}</span>
+          <span className="text-gray-600">vs</span>
+          {match.opponent_logo && (
+            <img
+              src={match.opponent_logo}
+              alt={match.opponent_tag}
+              className="w-5 h-5 object-contain"
+              loading="lazy"
+            />
+          )}
+          <span className="text-gray-800">{match.opponent_tag || match.opponent}</span>
+        </div>
+        <a
+          href={match.match_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-500 hover:underline mt-2 sm:mt-0"
+        >
+          試合詳細 (VLR.gg) <ExternalLink className="inline w-3 h-3" />
+        </a>
+      </div>
+      {match.player_match_stats && (
+        <div className="mt-2 pt-2 border-t border-gray-100 text-xs grid grid-cols-2 sm:grid-cols-4 gap-1 text-gray-600">
+          <span>ACS: {match.player_match_stats.acs ?? 'N/A'}</span>
+          <span>K/D: {match.player_match_stats.kd_ratio?.toFixed(2) ?? 'N/A'}</span>
+          <span>ADR: {match.player_match_stats.adr ?? 'N/A'}</span>
+          <span>
+            HS%:{' '}
+            {match.player_match_stats.hs_percentage
+              ? `${(match.player_match_stats.hs_percentage * 100).toFixed(0)}%`
+              : 'N/A'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+});
+
+MatchHistoryItem.displayName = 'MatchHistoryItem';
 
 const PlayerDetailPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
@@ -282,7 +426,7 @@ const PlayerDetailPage: React.FC = () => {
         setLoading(false);
         return;
       }
-      
+
       try {
         setLoading(true);
         setError(null);
@@ -294,14 +438,222 @@ const PlayerDetailPage: React.FC = () => {
         }
       } catch (err) {
         console.error('Error fetching player data:', err);
-        setError('プレイヤーデータの取得中にエラーが発生しました。しばらくしてから再試行してください。');
+        setError(
+          'プレイヤーデータの取得中にエラーが発生しました。しばらくしてから再試行してください。'
+        );
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchPlayerData();
   }, [playerId]);
+
+  const handleSetActiveTab = useCallback((tab: string) => {
+    setActiveTab(tab);
+  }, []);
+
+  // Memoized reversed matches for match history
+  const reversedMatches = useMemo(
+    () => playerGrowthStory?.processed_matches?.slice().reverse() || [],
+    [playerGrowthStory?.processed_matches]
+  );
+
+  // Memoized tab content
+  const tabContent = useMemo(() => {
+    if (!playerGrowthStory) return null;
+
+    switch (activeTab) {
+      case 'growth-story':
+        return (
+          <div className="space-y-6 sm:space-y-8">
+            {playerGrowthStory.career_phases && playerGrowthStory.career_phases.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <CareerTimeline careerPhases={playerGrowthStory.career_phases} />
+              </div>
+            )}
+
+            {playerGrowthStory.performance_trends &&
+              playerGrowthStory.performance_trends.length > 0 && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                      <PerformanceChart
+                        performanceTrends={playerGrowthStory.performance_trends}
+                        metric="acs"
+                        title="ACS (平均コンバットスコア)"
+                        color="#EF4444"
+                      />
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                      <PerformanceChart
+                        performanceTrends={playerGrowthStory.performance_trends}
+                        metric="kd_ratio"
+                        title="K/D比"
+                        color="#10B981"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mt-6 sm:mt-8">
+                    <PerformanceChart
+                      performanceTrends={playerGrowthStory.performance_trends}
+                      metric="hs_percentage"
+                      title="HS% (ヘッドショット率)"
+                      color="#8B5CF6"
+                    />
+                  </div>
+                </>
+              )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+              {playerGrowthStory.agent_stats && playerGrowthStory.agent_stats.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                  <AgentStatsChart agentStats={playerGrowthStory.agent_stats} />
+                </div>
+              )}
+              {playerGrowthStory.map_stats && playerGrowthStory.map_stats.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                  <MapStatsChart mapStats={playerGrowthStory.map_stats} />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'detailed-stats':
+        const overallStats = (() => {
+          if (!playerGrowthStory.performance_trends || playerGrowthStory.performance_trends.length === 0) {
+            return null;
+          }
+          const trends = playerGrowthStory.performance_trends;
+          const avgAcs = trends.reduce((sum, t) => sum + (t.acs || 0), 0) / trends.length;
+          const avgKd = trends.reduce((sum, t) => sum + (t.kd_ratio || 0), 0) / trends.length;
+          const avgHs = trends.reduce((sum, t) => sum + (t.hs_percentage || 0), 0) / trends.length;
+          const matches = playerGrowthStory.processed_matches || [];
+          const wins = matches.filter(m => m.result === 'W').length;
+          const winRate = matches.length > 0 ? wins / matches.length : 0;
+          return { avgAcs, avgKd, avgHs, winRate, totalMatches: matches.length, wins };
+        })();
+
+        return (
+          <div className="space-y-6 sm:space-y-8">
+            {/* 総合スタッツ */}
+            {overallStats && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">総合パフォーマンス</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-red-600">{overallStats.avgAcs.toFixed(0)}</div>
+                    <div className="text-sm text-gray-600">平均ACS</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-green-600">{overallStats.avgKd.toFixed(2)}</div>
+                    <div className="text-sm text-gray-600">平均K/D</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-purple-600">{(overallStats.avgHs * 100).toFixed(1)}%</div>
+                    <div className="text-sm text-gray-600">平均HS%</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-600">{(overallStats.winRate * 100).toFixed(0)}%</div>
+                    <div className="text-sm text-gray-600">勝率 ({overallStats.wins}W)</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* エージェント別統計テーブル */}
+            {playerGrowthStory.agent_stats && playerGrowthStory.agent_stats.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">エージェント別統計</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 font-semibold text-gray-700">エージェント</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">試合数</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">勝率</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">平均ACS</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">平均K/D</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playerGrowthStory.agent_stats.slice(0, 10).map((stat, index) => (
+                        <tr key={stat.agent_name} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td className="py-3 px-2 font-medium text-gray-900">{stat.agent_name}</td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.matches_played}</td>
+                          <td className="py-3 px-2 text-center">
+                            <span className={`font-medium ${stat.win_rate >= 0.5 ? 'text-green-600' : 'text-red-600'}`}>
+                              {(stat.win_rate * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.acs_avg?.toFixed(0) || '-'}</td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.kd_ratio_avg?.toFixed(2) || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* マップ別統計テーブル */}
+            {playerGrowthStory.map_stats && playerGrowthStory.map_stats.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">マップ別統計</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 font-semibold text-gray-700">マップ</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">試合数</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">勝利</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">敗北</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">勝率</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playerGrowthStory.map_stats.map((stat, index) => (
+                        <tr key={stat.map_name} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td className="py-3 px-2 font-medium text-gray-900">{stat.map_name}</td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.matches_played}</td>
+                          <td className="py-3 px-2 text-center text-green-600 font-medium">{stat.wins}</td>
+                          <td className="py-3 px-2 text-center text-red-600 font-medium">{stat.losses}</td>
+                          <td className="py-3 px-2 text-center">
+                            <span className={`font-medium ${stat.win_rate >= 0.5 ? 'text-green-600' : 'text-red-600'}`}>
+                              {(stat.win_rate * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'match-history':
+        return (
+          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">試合履歴</h3>
+            {reversedMatches.length > 0 ? (
+              <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                {reversedMatches.map((match) => (
+                  <MatchHistoryItem key={match.match_id} match={match} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600">試合履歴データがありません。</p>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  }, [activeTab, playerGrowthStory, reversedMatches]);
 
   if (loading) {
     return <PlayerDetailSkeleton />;
@@ -320,14 +672,14 @@ const PlayerDetailPage: React.FC = () => {
               {error || 'プレイヤーデータが見つかりませんでした。'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link 
-                to="/players" 
+              <Link
+                to="/players"
                 className="inline-flex items-center justify-center px-5 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200 text-sm sm:text-base"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 選手一覧へ
               </Link>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className="inline-flex items-center justify-center px-5 py-2.5 sm:px-6 sm:py-3 bg-white text-gray-700 border border-gray-300 font-medium rounded-xl hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base"
               >
@@ -340,158 +692,28 @@ const PlayerDetailPage: React.FC = () => {
     );
   }
 
-  const renderTabContent = () => {
-    if (!playerGrowthStory) return null;
-
-    switch (activeTab) {
-      case 'growth-story':
-        return (
-          <div className="space-y-6 sm:space-y-8">
-            {playerGrowthStory.career_phases && playerGrowthStory.career_phases.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-                <CareerTimeline careerPhases={playerGrowthStory.career_phases} />
-              </div>
-            )}
-            
-            {playerGrowthStory.performance_trends && playerGrowthStory.performance_trends.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                  <PerformanceChart 
-                    performanceTrends={playerGrowthStory.performance_trends} 
-                    metric="acs" 
-                    title="ACS (平均コンバットスコア)" 
-                    color="#EF4444" 
-                  />
-                </div>
-                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                  <PerformanceChart 
-                    performanceTrends={playerGrowthStory.performance_trends} 
-                    metric="kd_ratio" 
-                    title="K/D比" 
-                    color="#10B981" 
-                  />
-                </div>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-              {playerGrowthStory.agent_stats && playerGrowthStory.agent_stats.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                  <AgentStatsChart agentStats={playerGrowthStory.agent_stats} />
-                </div>
-              )}
-              {playerGrowthStory.map_stats && playerGrowthStory.map_stats.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                  <MapStatsChart mapStats={playerGrowthStory.map_stats} />
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      
-      case 'detailed-stats':
-        return (
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-center">
-            <div className="mb-6">
-              <BarChart3 className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">詳細統計</h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                この機能は現在開発中です。今後のアップデートにご期待ください。
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4 sm:p-6 text-left text-xs sm:text-sm text-gray-500">
-              <p className="font-medium mb-2 text-gray-700">実装予定の分析項目：</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>月別・大会別パフォーマンス変動</li>
-                <li>エージェントごとの詳細な役割遂行度</li>
-                <li>マップごとの攻守別成績・特定エリアでのアクション分析</li>
-                <li>武器使用傾向と経済管理分析</li>
-                <li>クラッチ成功率・重要な局面でのパフォーマンス</li>
-              </ul>
-            </div>
-          </div>
-        );
-      
-      case 'match-history':
-        return (
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">試合履歴</h3>
-            {playerGrowthStory.processed_matches && playerGrowthStory.processed_matches.length > 0 ? (
-              <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-                {playerGrowthStory.processed_matches.slice().reverse().map(match => ( 
-                  <div key={match.match_id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
-                      <div className="flex items-center space-x-2 mb-2 sm:mb-0">
-                        {match.event_logo && <img src={match.event_logo} alt={match.event} className="w-5 h-5 object-contain"/>}
-                        <span className="font-semibold text-gray-700 text-sm">{match.event}</span>
-                      </div>
-                      <span className="text-xs text-gray-500">{new Date(match.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                        <div className="flex items-center space-x-2">
-                            <span className={`font-bold text-lg ${match.result === 'W' ? 'text-green-500' : match.result === 'L' ? 'text-red-500' : 'text-gray-500'}`}>
-                                {match.result}
-                            </span>
-                            <span className="text-gray-800">{match.score}</span>
-                            <span className="text-gray-600">vs</span>
-                            {match.opponent_logo && <img src={match.opponent_logo} alt={match.opponent_tag} className="w-5 h-5 object-contain"/>}
-                            <span className="text-gray-800">{match.opponent_tag || match.opponent}</span>
-                        </div>
-                        <a 
-                            href={match.match_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-xs text-blue-500 hover:underline mt-2 sm:mt-0"
-                        >
-                            試合詳細 (VLR.gg) <ExternalLink className="inline w-3 h-3"/>
-                        </a>
-                    </div>
-                    {match.player_match_stats && (
-                        <div className="mt-2 pt-2 border-t border-gray-100 text-xs grid grid-cols-2 sm:grid-cols-4 gap-1 text-gray-600">
-                            <span>ACS: {match.player_match_stats.acs ?? 'N/A'}</span>
-                            <span>K/D: {match.player_match_stats.kd_ratio?.toFixed(2) ?? 'N/A'}</span>
-                            <span>ADR: {match.player_match_stats.adr ?? 'N/A'}</span>
-                            <span>HS%: {match.player_match_stats.hs_percentage ? `${(match.player_match_stats.hs_percentage * 100).toFixed(0)}%` : 'N/A'}</span>
-                        </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600">試合履歴データがありません。</p>
-            )}
-          </div>
-        );
-      
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-6 sm:py-8">
-        <Link 
-          to="/players" 
+        <Link
+          to="/players"
           className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium mb-6 sm:mb-8 group text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
           選手一覧に戻る
         </Link>
-        
+
         <PlayerHeader playerInfo={playerGrowthStory.info} />
-        
-        <QuickStats 
-            careerPhases={playerGrowthStory.career_phases || []} 
-            agentStats={playerGrowthStory.agent_stats || []}
-            matchCount={playerGrowthStory.processed_matches?.length || 0}
+
+        <QuickStats
+          careerPhases={playerGrowthStory.career_phases || []}
+          agentStats={playerGrowthStory.agent_stats || []}
+          matchCount={playerGrowthStory.processed_matches?.length || 0}
         />
-        
-        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-        
-        <div className="mb-12">
-          {renderTabContent()}
-        </div>
+
+        <TabNavigation activeTab={activeTab} setActiveTab={handleSetActiveTab} />
+
+        <div className="mb-12">{tabContent}</div>
       </div>
     </div>
   );
