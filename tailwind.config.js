@@ -5,10 +5,15 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			pixel: ['"Press Start 2P"', 'cursive'],
+  			'pixel-jp': ['"DotGothic16"', 'sans-serif'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			'pixel': '0px',
   		},
   		colors: {
         // CSSカスタムプロパティを参照するように修正

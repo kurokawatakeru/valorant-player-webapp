@@ -17,7 +17,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        <div className="flex flex-col min-h-screen bg-[#0D1117]">
           <Header />
 
           <main className="flex-grow">

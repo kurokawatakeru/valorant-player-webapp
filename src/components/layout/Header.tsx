@@ -21,17 +21,17 @@ const Header: React.FC = memo(() => {
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100 sticky top-0 z-50">
+    <header className="bg-[#161B22] border-b-4 border-[#FF0040] sticky top-0 z-50 shadow-[0_4px_0_0_#000]">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link
             to="/"
-            className="flex items-center space-x-2 text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent hover:from-red-600 hover:to-pink-600 transition-all duration-300"
+            className="flex items-center space-x-2 text-lg sm:text-xl font-pixel text-[#FF0040] hover:text-[#00FFFF] transition-colors duration-200"
           >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#FF0040] flex items-center justify-center border-2 border-[#FFFF00] shadow-[4px_4px_0_0_#000]">
+              <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <span className="hidden sm:block">VALORANT Player Analytics</span>
+            <span className="hidden sm:block text-shadow">VPA</span>
             <span className="sm:hidden">VPA</span>
           </Link>
 
@@ -42,10 +42,10 @@ const Header: React.FC = memo(() => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-3 py-2 lg:px-4 rounded-lg font-medium transition-all duration-200 text-sm lg:text-base hover:bg-gray-100 ${
+                  className={`flex items-center space-x-2 px-3 py-2 lg:px-4 font-pixel-jp text-xs lg:text-sm transition-all duration-200 border-2 ${
                     isActivePath(item.path)
-                      ? 'text-red-600 bg-red-50 shadow-sm'
-                      : 'text-gray-700 hover:text-gray-900'
+                      ? 'text-[#0D1117] bg-[#00FFFF] border-[#00FFFF] shadow-[4px_4px_0_0_#000]'
+                      : 'text-[#F0F6FC] border-transparent hover:border-[#FF0040] hover:text-[#FF0040]'
                   }`}
                 >
                   <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -56,12 +56,12 @@ const Header: React.FC = memo(() => {
           </nav>
 
           <div className="flex items-center space-x-2">
-            <button className="hidden md:flex p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200">
+            <button className="hidden md:flex p-2 text-[#F0F6FC] hover:text-[#00FFFF] border-2 border-transparent hover:border-[#00FFFF] transition-all duration-200">
               <Search className="w-5 h-5" />
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
+              className="md:hidden p-2 text-[#F0F6FC] hover:text-[#00FFFF] border-2 border-[#FF0040] hover:border-[#00FFFF] transition-all duration-200"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -69,7 +69,7 @@ const Header: React.FC = memo(() => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-100 bg-white/95 backdrop-blur-md">
+          <div className="md:hidden py-4 border-t-2 border-[#FF0040] bg-[#161B22]">
             <nav className="flex flex-col space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
@@ -78,10 +78,10 @@ const Header: React.FC = memo(() => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    className={`flex items-center space-x-3 px-4 py-3 font-pixel-jp text-sm transition-all duration-200 border-2 ${
                       isActivePath(item.path)
-                        ? 'text-red-600 bg-red-50 shadow-sm'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'text-[#0D1117] bg-[#00FFFF] border-[#00FFFF]'
+                        : 'text-[#F0F6FC] border-transparent hover:border-[#FF0040] hover:text-[#FF0040]'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -90,7 +90,7 @@ const Header: React.FC = memo(() => {
                 );
               })}
               <div className="px-4 py-2">
-                <button className="w-full flex items-center justify-center space-x-2 p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 text-gray-700">
+                <button className="w-full flex items-center justify-center space-x-2 p-3 bg-[#0D1117] border-2 border-[#FF0040] text-[#F0F6FC] hover:bg-[#FF0040] hover:text-white transition-all duration-200 font-pixel-jp text-sm">
                   <Search className="w-5 h-5" />
                   <span>検索</span>
                 </button>

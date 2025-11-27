@@ -4,132 +4,132 @@
 
 @layer base {
   :root {
-    /* shadcn/uiのカラースキームに合わせた基本的な色の定義 */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem; /* 既存のradiusを活かす */
-    
-    /* VALORANT Color Palette (既存のものを活かす) */
-    --valorant-red: #FF4655;
-    --valorant-teal: #00D4AA;
-    --valorant-gold: #F0B90B;
-    --valorant-blue: #389BFF;
-    
-    /* Sidebar Variables (既存のものを活かすが、一部shadcn/uiの命名規則に合わせることも検討) */
-    --sidebar-background: 0 0% 98%; /* shadcnの --background とは別に定義 */
-    --sidebar-foreground: 240 5.3% 26.1%; /* shadcnの --foreground とは別に定義 */
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border-specific: 220 13% 91%; /* Sidebar固有のボーダー、必要なら --border とは別に定義 */
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  
-  .dark {
-    /* shadcn/uiのダークモードカラースキーム */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    /* 8-bit Retro Color Palette */
+    --background: 220 20% 10%;
+    --foreground: 60 100% 95%;
+    --card: 220 25% 15%;
+    --card-foreground: 60 100% 95%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 60 100% 95%;
+    --primary: 0 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 180 100% 40%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 20% 20%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 20% 30%;
+    --input: 220 20% 20%;
+    --ring: 0 100% 60%;
+    --radius: 0px;
 
-    /* Sidebar Variables for dark mode (既存のものを活かす) */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%; /* shadcnの --primary とは別に定義 */
+    /* 8-bit Retro Colors */
+    --pixel-red: #FF0040;
+    --pixel-cyan: #00FFFF;
+    --pixel-yellow: #FFFF00;
+    --pixel-green: #00FF00;
+    --pixel-purple: #FF00FF;
+    --pixel-blue: #0080FF;
+    --pixel-orange: #FF8000;
+    --pixel-black: #0D1117;
+    --pixel-dark: #161B22;
+    --pixel-white: #F0F6FC;
+
+    /* Pixel border */
+    --pixel-border: 4px;
+
+    /* Sidebar Variables */
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 60 100% 95%;
+    --sidebar-primary: 0 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border-specific: 240 3.7% 15.9%; /* Sidebar固有のボーダー */
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 20% 20%;
+    --sidebar-accent-foreground: 60 100% 95%;
+    --sidebar-border-specific: 220 20% 30%;
+    --sidebar-ring: 0 100% 60%;
   }
-
-  /* Global Base Styles */
-  /* * {
-      @apply border-border;  <-- この行を削除またはコメントアウト
-    } 
-  */
   
+  /* 8-bit Global Base Styles */
   body {
-    @apply bg-background text-foreground font-sans border-border; /* bodyにデフォルトのボーダーと背景色、文字色を適用 */
-    font-feature-settings: "rlig" 1, "calt" 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-background text-foreground;
+    font-family: 'DotGothic16', sans-serif;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: auto;
   }
 
   html {
     scroll-behavior: smooth;
   }
 
-  /* Typography Improvements */
+  /* Pixel Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    font-family: 'Press Start 2P', cursive;
+    @apply tracking-wide;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
   }
 
   h1 {
-    @apply text-4xl lg:text-5xl;
-  }
-
-  h2 {
-    @apply text-3xl lg:text-4xl;
-  }
-
-  h3 {
     @apply text-2xl lg:text-3xl;
   }
 
-  h4 {
+  h2 {
     @apply text-xl lg:text-2xl;
   }
 
+  h3 {
+    @apply text-lg lg:text-xl;
+  }
+
+  h4 {
+    @apply text-base lg:text-lg;
+  }
+
   p {
-    @apply leading-7;
+    @apply leading-relaxed text-sm;
   }
 
-  /* Focus States */
+  /* Pixel Focus States */
   *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 rounded-lg ring-offset-background; /* ring-offset-background を追加 */
+    @apply outline-none;
+    box-shadow: 0 0 0 4px var(--pixel-cyan);
   }
 
-  /* Selection Styles */
+  /* Pixel Selection Styles */
   ::selection {
-    @apply bg-primary/20 text-primary-foreground; /* primary系の色を使用 */
+    background: var(--pixel-cyan);
+    color: var(--pixel-black);
   }
 
   ::-moz-selection {
-    @apply bg-primary/20 text-primary-foreground; /* primary系の色を使用 */
+    background: var(--pixel-cyan);
+    color: var(--pixel-black);
+  }
+
+  /* CRT Scanline Effect */
+  .crt-effect {
+    position: relative;
+  }
+
+  .crt-effect::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.1),
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+    pointer-events: none;
+    z-index: 1000;
   }
 }
 
