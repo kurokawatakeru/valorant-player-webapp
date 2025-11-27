@@ -475,24 +475,34 @@ const PlayerDetailPage: React.FC = () => {
 
             {playerGrowthStory.performance_trends &&
               playerGrowthStory.performance_trends.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                  <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                      <PerformanceChart
+                        performanceTrends={playerGrowthStory.performance_trends}
+                        metric="acs"
+                        title="ACS (平均コンバットスコア)"
+                        color="#EF4444"
+                      />
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                      <PerformanceChart
+                        performanceTrends={playerGrowthStory.performance_trends}
+                        metric="kd_ratio"
+                        title="K/D比"
+                        color="#10B981"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mt-6 sm:mt-8">
                     <PerformanceChart
                       performanceTrends={playerGrowthStory.performance_trends}
-                      metric="acs"
-                      title="ACS (平均コンバットスコア)"
-                      color="#EF4444"
+                      metric="hs_percentage"
+                      title="HS% (ヘッドショット率)"
+                      color="#8B5CF6"
                     />
                   </div>
-                  <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                    <PerformanceChart
-                      performanceTrends={playerGrowthStory.performance_trends}
-                      metric="kd_ratio"
-                      title="K/D比"
-                      color="#10B981"
-                    />
-                  </div>
-                </div>
+                </>
               )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
@@ -511,25 +521,116 @@ const PlayerDetailPage: React.FC = () => {
         );
 
       case 'detailed-stats':
+        const overallStats = (() => {
+          if (!playerGrowthStory.performance_trends || playerGrowthStory.performance_trends.length === 0) {
+            return null;
+          }
+          const trends = playerGrowthStory.performance_trends;
+          const avgAcs = trends.reduce((sum, t) => sum + (t.acs || 0), 0) / trends.length;
+          const avgKd = trends.reduce((sum, t) => sum + (t.kd_ratio || 0), 0) / trends.length;
+          const avgHs = trends.reduce((sum, t) => sum + (t.hs_percentage || 0), 0) / trends.length;
+          const matches = playerGrowthStory.processed_matches || [];
+          const wins = matches.filter(m => m.result === 'W').length;
+          const winRate = matches.length > 0 ? wins / matches.length : 0;
+          return { avgAcs, avgKd, avgHs, winRate, totalMatches: matches.length, wins };
+        })();
+
         return (
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-center">
-            <div className="mb-6">
-              <BarChart3 className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">詳細統計</h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                この機能は現在開発中です。今後のアップデートにご期待ください。
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4 sm:p-6 text-left text-xs sm:text-sm text-gray-500">
-              <p className="font-medium mb-2 text-gray-700">実装予定の分析項目：</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>月別・大会別パフォーマンス変動</li>
-                <li>エージェントごとの詳細な役割遂行度</li>
-                <li>マップごとの攻守別成績・特定エリアでのアクション分析</li>
-                <li>武器使用傾向と経済管理分析</li>
-                <li>クラッチ成功率・重要な局面でのパフォーマンス</li>
-              </ul>
-            </div>
+          <div className="space-y-6 sm:space-y-8">
+            {/* 総合スタッツ */}
+            {overallStats && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">総合パフォーマンス</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-red-600">{overallStats.avgAcs.toFixed(0)}</div>
+                    <div className="text-sm text-gray-600">平均ACS</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-green-600">{overallStats.avgKd.toFixed(2)}</div>
+                    <div className="text-sm text-gray-600">平均K/D</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-purple-600">{(overallStats.avgHs * 100).toFixed(1)}%</div>
+                    <div className="text-sm text-gray-600">平均HS%</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-600">{(overallStats.winRate * 100).toFixed(0)}%</div>
+                    <div className="text-sm text-gray-600">勝率 ({overallStats.wins}W)</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* エージェント別統計テーブル */}
+            {playerGrowthStory.agent_stats && playerGrowthStory.agent_stats.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">エージェント別統計</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 font-semibold text-gray-700">エージェント</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">試合数</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">勝率</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">平均ACS</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">平均K/D</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playerGrowthStory.agent_stats.slice(0, 10).map((stat, index) => (
+                        <tr key={stat.agent_name} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td className="py-3 px-2 font-medium text-gray-900">{stat.agent_name}</td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.matches_played}</td>
+                          <td className="py-3 px-2 text-center">
+                            <span className={`font-medium ${stat.win_rate >= 0.5 ? 'text-green-600' : 'text-red-600'}`}>
+                              {(stat.win_rate * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.acs_avg?.toFixed(0) || '-'}</td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.kd_ratio_avg?.toFixed(2) || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* マップ別統計テーブル */}
+            {playerGrowthStory.map_stats && playerGrowthStory.map_stats.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">マップ別統計</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 font-semibold text-gray-700">マップ</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">試合数</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">勝利</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">敗北</th>
+                        <th className="text-center py-3 px-2 font-semibold text-gray-700">勝率</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playerGrowthStory.map_stats.map((stat, index) => (
+                        <tr key={stat.map_name} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td className="py-3 px-2 font-medium text-gray-900">{stat.map_name}</td>
+                          <td className="py-3 px-2 text-center text-gray-700">{stat.matches_played}</td>
+                          <td className="py-3 px-2 text-center text-green-600 font-medium">{stat.wins}</td>
+                          <td className="py-3 px-2 text-center text-red-600 font-medium">{stat.losses}</td>
+                          <td className="py-3 px-2 text-center">
+                            <span className={`font-medium ${stat.win_rate >= 0.5 ? 'text-green-600' : 'text-red-600'}`}>
+                              {(stat.win_rate * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         );
 

@@ -34,6 +34,7 @@ const Footer: React.FC = memo(() => {
                 { to: '/', label: 'ホーム' },
                 { to: '/players', label: '選手一覧' },
                 { to: '/teams', label: 'チーム一覧' },
+                { to: '/compare', label: '選手比較' },
               ].map((link) => (
                 <li key={link.to}>
                   <Link

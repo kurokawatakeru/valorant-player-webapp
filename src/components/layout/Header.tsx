@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Users, Trophy, Search, Shield } from 'lucide-react';
+import { Menu, X, Home, Users, Trophy, Search, Shield, BarChart3 } from 'lucide-react';
 
 const Header: React.FC = memo(() => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,6 +10,7 @@ const Header: React.FC = memo(() => {
     { path: '/', label: 'ホーム', icon: Home },
     { path: '/players', label: '選手一覧', icon: Users },
     { path: '/teams', label: 'チーム一覧', icon: Shield },
+    { path: '/compare', label: '比較', icon: BarChart3 },
   ];
 
   const isActivePath = (path: string) => {

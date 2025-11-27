@@ -1,5 +1,5 @@
 /**
- * VALORANTプレイヤー成長ストーリーサイト API連携サービス
+ * VALORANT Player Analytics API連携サービス
  * vlr.orlandomm.net APIからデータを取得し、フロントエンド用に加工する
  */
 
@@ -39,10 +39,28 @@ export type {
 } from '../types';
 
 const API_BASE_URL = 'https://vlr.orlandomm.net/api/v1';
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+// カスタムエラークラス
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public isNetworkError: boolean = false
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+// 遅延関数
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function fetchFromApi<T>(
   endpoint: string,
-  params?: Record<string, string | number>
+  params?: Record<string, string | number>,
+  retries: number = MAX_RETRIES
 ): Promise<T> {
   const url = new URL(`${API_BASE_URL}/${endpoint}`);
   if (params) {
@@ -50,21 +68,59 @@ async function fetchFromApi<T>(
       url.searchParams.append(key, String(value));
     });
   }
-  try {
-    const response = await fetch(url.toString());
-    if (!response.ok) {
-      console.error(
-        `API error: ${response.status} ${response.statusText} for URL: ${url.toString()}`
-      );
-      const errorBody = await response.text();
-      console.error('Error body:', errorBody);
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url.toString());
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => '');
+        console.error(
+          `API error: ${response.status} ${response.statusText} for URL: ${url.toString()}`
+        );
+        if (errorBody) console.error('Error body:', errorBody);
+
+        // 4xx エラーはリトライしない
+        if (response.status >= 400 && response.status < 500) {
+          throw new ApiError(
+            `API error: ${response.status} ${response.statusText}`,
+            response.status
+          );
+        }
+
+        // 5xx エラーはリトライ
+        throw new ApiError(
+          `Server error: ${response.status}`,
+          response.status
+        );
+      }
+
+      return (await response.json()) as T;
+    } catch (error) {
+      lastError = error as Error;
+
+      // ApiErrorで4xxの場合はリトライしない
+      if (error instanceof ApiError && error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+        throw error;
+      }
+
+      // ネットワークエラーの場合
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        lastError = new ApiError('ネットワーク接続エラー', undefined, true);
+      }
+
+      // 最後の試行でなければリトライ
+      if (attempt < retries) {
+        console.warn(`API request failed, retrying (${attempt + 1}/${retries})...`);
+        await delay(RETRY_DELAY_MS * (attempt + 1));
+      }
     }
-    return (await response.json()) as T;
-  } catch (error) {
-    console.error(`Error fetching from API (${endpoint}):`, error);
-    throw error;
   }
+
+  console.error(`Error fetching from API (${endpoint}) after ${retries} retries:`, lastError);
+  throw lastError;
 }
 
 export async function getPlayers(
@@ -77,13 +133,13 @@ export async function getPlayers(
   return fetchFromApi<PaginatedResponse<Player>>('players', params);
 }
 
-export async function getJapanesePlayers(limit: number = 100): Promise<Player[]> {
+export async function getAllPlayers(limit: number = 100, country?: string): Promise<Player[]> {
   const players: Player[] = [];
   let page = 1;
   let hasNextPage = true;
   try {
     while (hasNextPage) {
-      const response = await getPlayers(limit, page, 'jp');
+      const response = await getPlayers(limit, page, country);
       if (response && response.data) {
         players.push(...response.data);
         hasNextPage = response.pagination.hasNextPage;
@@ -93,7 +149,7 @@ export async function getJapanesePlayers(limit: number = 100): Promise<Player[]>
       }
     }
   } catch (error) {
-    console.error('Failed to fetch all Japanese players:', error);
+    console.error('Failed to fetch players:', error);
   }
   return players;
 }

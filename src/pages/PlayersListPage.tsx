@@ -11,7 +11,7 @@ import {
   Eye,
   X,
 } from 'lucide-react';
-import { getJapanesePlayers, Player } from '../api/apiService';
+import { getAllPlayers, Player } from '../api/apiService';
 
 // Loading Skeleton Component
 const PlayerCardSkeleton: React.FC = memo(() => (
@@ -123,9 +123,12 @@ interface FilterComponentProps {
   setSearchTerm: (term: string) => void;
   teamFilter: string;
   setTeamFilter: (team: string) => void;
+  countryFilter: string;
+  setCountryFilter: (country: string) => void;
   sortBy: string;
   setSortBy: (sort: string) => void;
   teams: string[];
+  countries: string[];
   totalCount: number;
   filteredCount: number;
 }
@@ -136,9 +139,12 @@ const FilterComponent: React.FC<FilterComponentProps> = memo(
     setSearchTerm,
     teamFilter,
     setTeamFilter,
+    countryFilter,
+    setCountryFilter,
     sortBy,
     setSortBy,
     teams,
+    countries,
     totalCount,
     filteredCount,
   }) => {
@@ -158,6 +164,13 @@ const FilterComponent: React.FC<FilterComponentProps> = memo(
       [setTeamFilter]
     );
 
+    const handleCountryChange = useCallback(
+      (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setCountryFilter(e.target.value);
+      },
+      [setCountryFilter]
+    );
+
     const handleSortChange = useCallback(
       (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSortBy(e.target.value);
@@ -168,7 +181,8 @@ const FilterComponent: React.FC<FilterComponentProps> = memo(
     const handleClear = useCallback(() => {
       setSearchTerm('');
       setTeamFilter('');
-    }, [setSearchTerm, setTeamFilter]);
+      setCountryFilter('');
+    }, [setSearchTerm, setTeamFilter, setCountryFilter]);
 
     const toggleFilters = useCallback(() => {
       setShowFilters((prev) => !prev);
@@ -202,15 +216,15 @@ const FilterComponent: React.FC<FilterComponentProps> = memo(
           {/* Results Count */}
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>
-              {filteredCount}件中{totalCount}件の選手を表示
+              {filteredCount}件 / {totalCount}件
             </span>
-            {searchTerm && (
+            {(searchTerm || teamFilter || countryFilter) && (
               <button
                 onClick={handleClear}
                 className="flex items-center text-red-500 hover:text-red-600 font-medium"
               >
                 <X className="w-4 h-4 mr-1" />
-                クリア
+                フィルタークリア
               </button>
             )}
           </div>
@@ -249,14 +263,20 @@ const FilterComponent: React.FC<FilterComponentProps> = memo(
                 </select>
               </div>
 
-              {/* Region Filter */}
+              {/* Country Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">地域</label>
-                <select className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200">
-                  <option value="">すべての地域</option>
-                  <option value="jp">日本</option>
-                  <option value="kr">韓国</option>
-                  <option value="apac">APAC</option>
+                <label className="block text-sm font-medium text-gray-700 mb-2">国</label>
+                <select
+                  value={countryFilter}
+                  onChange={handleCountryChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="">すべての国</option>
+                  {countries.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -335,9 +355,11 @@ const PlayersListPage: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [teamFilter, setTeamFilter] = useState<string>('');
+  const [countryFilter, setCountryFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('name');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [teams, setTeams] = useState<string[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -345,17 +367,25 @@ const PlayersListPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // 日本人プレイヤーを取得
-        const japanesePlayersData = await getJapanesePlayers();
-        setPlayers(japanesePlayersData);
+        // プレイヤーを取得
+        const playersData = await getAllPlayers();
+        setPlayers(playersData);
 
         // チームリストを抽出
         const uniqueTeams = Array.from(
-          new Set(japanesePlayersData.map((player) => player.teamTag))
+          new Set(playersData.map((player) => player.teamTag))
         )
           .filter(Boolean)
           .sort();
         setTeams(uniqueTeams);
+
+        // 国リストを抽出
+        const uniqueCountries = Array.from(
+          new Set(playersData.map((player) => player.country))
+        )
+          .filter(Boolean)
+          .sort();
+        setCountries(uniqueCountries);
       } catch (err) {
         console.error('Error fetching players:', err);
         setError('プレイヤーデータの取得中にエラーが発生しました。');
@@ -386,6 +416,11 @@ const PlayersListPage: React.FC = () => {
       result = result.filter((player) => player.teamTag === teamFilter);
     }
 
+    // 国でフィルタリング
+    if (countryFilter) {
+      result = result.filter((player) => player.country === countryFilter);
+    }
+
     // ソート
     result.sort((a, b) => {
       switch (sortBy) {
@@ -400,11 +435,12 @@ const PlayersListPage: React.FC = () => {
     });
 
     return result;
-  }, [players, searchTerm, teamFilter, sortBy]);
+  }, [players, searchTerm, teamFilter, countryFilter, sortBy]);
 
   const handleResetFilters = useCallback(() => {
     setSearchTerm('');
     setTeamFilter('');
+    setCountryFilter('');
   }, []);
 
   if (loading) {
@@ -412,7 +448,7 @@ const PlayersListPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent mb-4">
-            日本人VALORANTプロプレイヤー一覧
+            VALORANTプロプレイヤー一覧
           </h1>
           <p className="text-gray-600">読み込み中...</p>
         </div>
@@ -452,10 +488,10 @@ const PlayersListPage: React.FC = () => {
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent mb-4">
-            日本人VALORANTプロプレイヤー一覧
+            VALORANTプロプレイヤー一覧
           </h1>
           <p className="text-xl text-gray-600">
-            {players.length}人の日本人プロプレイヤーのパフォーマンスデータを分析
+            {players.length}人のプロプレイヤーのパフォーマンスデータを分析
           </p>
         </div>
 
@@ -465,9 +501,12 @@ const PlayersListPage: React.FC = () => {
           setSearchTerm={setSearchTerm}
           teamFilter={teamFilter}
           setTeamFilter={setTeamFilter}
+          countryFilter={countryFilter}
+          setCountryFilter={setCountryFilter}
           sortBy={sortBy}
           setSortBy={setSortBy}
           teams={teams}
+          countries={countries}
           totalCount={players.length}
           filteredCount={filteredAndSortedPlayers.length}
         />

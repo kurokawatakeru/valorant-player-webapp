@@ -13,7 +13,7 @@ import {
   LineChart,
 } from 'lucide-react';
 import {
-  getJapanesePlayers,
+  getAllPlayers,
   getTeams,
   generatePlayerGrowthStory,
   Player,
@@ -28,7 +28,7 @@ const HeroSection: React.FC = memo(() => {
     () => [
       {
         title: 'VALORANT選手データ分析',
-        subtitle: '日本人プロ選手のパフォーマンスをデータで可視化',
+        subtitle: 'プロ選手のパフォーマンスをデータで可視化',
         gradient: 'from-red-500 via-pink-500 to-purple-600',
       },
       {
@@ -121,7 +121,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = memo(({ playerCount, teamCou
       {
         icon: Users,
         value: playerCount > 0 ? playerCount.toLocaleString() : '-',
-        label: '日本人プレイヤー',
+        label: 'プレイヤー数',
         color: 'text-blue-500',
         bgColor: 'bg-blue-50',
       },
@@ -304,7 +304,7 @@ const FeaturedPlayers: React.FC<FeaturedPlayersProps> = memo(({ featuredData, lo
         <div className="flex justify-between items-center mb-12">
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-2">注目の選手</h2>
-            <p className="text-gray-600">日本を代表するVALORANTプロプレイヤー</p>
+            <p className="text-gray-600">世界で活躍するVALORANTプロプレイヤー</p>
           </div>
           <Link
             to="/players"
@@ -451,7 +451,7 @@ const CTASection: React.FC = memo(() => {
               選手データを分析しよう
             </h2>
             <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-              日本人プロプレイヤーの詳細な統計情報をチェック。
+              プロプレイヤーの詳細な統計情報をチェック。
               パフォーマンスの推移やエージェント使用率を確認できます。
             </p>
 
@@ -495,7 +495,7 @@ const HomePage: React.FC = () => {
       setLoading(true);
 
       try {
-        const players = await getJapanesePlayers(100);
+        const players = await getAllPlayers(100);
         setPlayerCount(players.length);
 
         const teamsResponse = await getTeams(100, 1);
